@@ -1,0 +1,20 @@
+{
+  "name": "pi-ui-forge",
+  "version": "0.1.0",
+  "description": "tldraw-based UI mock forge for pi - agent-edited React mocks on a tldraw canvas in their own window, with a design-subagent control plane over pi-sock",
+  "license": "MIT",
+  "type": "module",
+  "keywords": [
+    "pi-package"
+  ],
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "scripts": {
+    "build:editor": "cd editor && npm run build",
+    "build:shell": "cd shell && npm install",
+    "test": "cd server && python3 -m pytest tests/ -q"
+  }
+}
