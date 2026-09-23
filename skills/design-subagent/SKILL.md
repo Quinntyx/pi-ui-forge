@@ -1,52 +1,59 @@
 ---
 name: design-subagent
 description: >-
-  Skill for the pi-ui-forge design subagent: author React mock pages in the
-  session workspace, build them, self-inspect via screenshots, and follow the
-  alternating revision loop. Loaded by subagents spawned for UI mock design.
+  Skill for the design subagent running the pi-ui-forge mock editor: author
+  React mock pages in the mock folder, build, self-inspect via screenshots,
+  and hand over to the user with the blocking mock_review tool each round.
 ---
 
 # Design subagent (pi-ui-forge)
 
-You author a live UI mock. The mock editor window renders your React pages as
-iframes on a tldraw canvas; the user marks them up and sends annotations back
-to you. The **file system is your canvas**; the control channel only carries
-turn signals.
+You author a live UI mock. The mock editor (tldraw canvas + your React pages
+mounted as iframes) is running next to your tmux window; the user is looking
+at it. The loop is strictly alternating: you propose/revise, then hand over
+with a blocking review; the user annotates; the feedback comes back as the
+tool result.
 
-## Session workspace
+## Session workspace (`mock_folder` = your cwd)
 
-Everything lives in `/tmp/pi-ui-forge/<session>/`:
+- `app/pages/<name>.tsx` — one file per page, default-exported component;
+  `app/components/` for shared pieces
+- `build.mjs` — esbuild build script (one entry per page); run
+  `node build.mjs` after editing
+- `ann/`, `shots/` — annotation crops and screenshots (both yours and the
+  user's record)
+- `design-notes.md` — your running notes; finalize with a summary when the
+  session ends
 
-- `app/` — your React source: `app/pages/<name>.tsx` (one file per page,
-  default-exported component), `app/components/` for shared pieces
-- `build.mjs` — the build script (esbuild; one entry per page). Run
-  `node build.mjs` from the session root after editing. A green build with
-  unchanged page names/hashes is what tells the editor you're done.
-- `shots/<n>/<page>.png` — screenshots (yours to read)
+## Tools
+
+- `mock_open` — start the editor window (once, idempotent)
+- `mock_build` — build and push; new/changed pages appear on the canvas
+- `mock_screenshot` — capture current pages without changing the user's view;
+  returns paths/images for you to inspect
+- `mock_review` — **blocking**: flips the GUI to annotate mode and does not
+  return until the user sends markup, approves, or closes the window
 
 ## Rules
 
 1. **IDs, liberally.** Every section, card, interactive control, and anything
    you expect feedback on gets a stable semantic `id` (`#sidebar`,
-   `#checkout-cta`). Annotations attach to these ids; elements without ids
-   are addressed by fragile hierarchical fallbacks ("button.btn, first child
-   of first child of #panel") — don't make the user rely on that.
-2. **Self-inspect before settling.** Request screenshots of every page you
-   changed (the `mock_request_screenshot` tool, when present) and actually
-   read them. Iterate internally until it looks right; do not push visual
-   regressions onto the user to discover.
+   `#checkout-cta`). Annotations attach via CSS selectors built from these
+   ids; elements without ids are addressed by fragile hierarchical fallbacks
+   (`#panel > div:nth-child(2) > button:nth-child(1)`) — don't make the user
+   rely on that.
+2. **Self-inspect before every review.** `mock_screenshot`, then read every
+   page you changed and iterate internally until it looks right. Never push
+   visual regressions onto the user to discover.
 3. **Real React.** Idiomatic components, real state, CSS as in any web
-   project. No mock DSLs, no placeholders that only render in theory.
-4. **Alternation discipline.** When your build is green and your note is
-   written, stop. The user marks up the result next; you act again only on
-   the next revision request.
-5. **End every turn with a short prose note**: what changed, what to look at,
-   open questions for the user.
-
-## Revision requests
-
-When a revision request arrives, it names the picked pages, the user's typed
-description, text comments (each targeting an id or hierarchical tag), and
-draw annotations (PNG crops under `ann/`). Address comments by the exact
-anchor/hierarchy given — that is the same DOM you wrote. If a target no
-longer exists after your change, say so in the note.
+   project. No mock DSLs, no theoretical placeholders.
+4. **`mock_review` is the only handover.** When it returns, act on exactly
+   that feedback (picked pages, description, comments with selectors, draw
+   crops), rebuild, and call `mock_review` again. The user approving or
+   closing the window ends the session: finalize `design-notes.md` and
+   settle with a concise summary for the calling agent.
+5. **Alternation discipline.** Never loop autonomously across review rounds;
+   each round is driven by real user feedback. Never call `mock_review` with
+   a red build — build first; the user never sees mid-edit states.
+6. **End-of-turn notes.** With each review hand-over, keep a short entry in
+   `design-notes.md`: what changed, what to look at, open questions.

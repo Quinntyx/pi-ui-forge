@@ -1,94 +1,76 @@
 /**
- * pi-ui-forge — tldraw-based UI mock forge.
+ * pi-ui-forge — tldraw-based UI mock editor, run inside a design subagent.
  *
- * Thin extension: starts the `pi_ui_forge` sidecar server (Python), opens the
- * Electron window, and exposes agent-facing tools over a control socket.
+ * Installed only in the `design-subagents` pi profile (never the main
+ * profile). The extension owns everything server-side in-process:
  *
- * Mode "agent":    agent drives mock updates with mock_update; mock_wait
- *                  resolves when the user clicks "send back" (annotations come
- *                  back as the tool result) or when the window closes.
- * Mode "subagent": the editor talks to a design subagent over pi-sock through
- *                  the sidecar's bridge; the calling agent only waits for the
- *                  window to close. See PLAN.md.
+ *   - HTTP/WS server (node http + ws): serves the editor build + app bundle,
+ *     relays markup packages, receives screenshot requests
+ *   - Electron child: one BrowserWindow on the editor URL, quit-on-close
+ *   - esbuild builds of the mock app in the subagent's cwd (mock_folder)
+ *
+ * Tools registered here are called by the design subagent's model; the
+ * questionnaire-style loop lives in mock_review, which blocks the tool call
+ * until the user sends markup, approves, or closes the window. See PLAN.md.
  */
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
 export default function (pi: ExtensionAPI) {
-	// TODO: sidecar lifecycle (spawn `python -m pi_ui_forge serve --control <sock>`,
-	// hold as long-lived resource, kill on session_shutdown).
+	// Long-lived resources (server, electron child) per extensions.md —
+	// created on first mock_open, torn down on session_shutdown.
 
 	pi.registerTool({
 		name: "mock_open",
-		label: "Open UI mock",
+		label: "Open mock editor",
 		description:
-			"Open a tldraw UI mock editor window (Electron, not the browser) with the given React mock tree mounted on the canvas.",
-		promptSnippet: "Open an interactive UI mock window for the user",
-		promptGuidelines: [
-			"Use mock_open when the user wants to see, interact with, or annotate a UI mock; keep the tree JSON small and complete.",
-		],
+			"Start the UI mock editor (HTTP/WS server + Electron window) for the mock app in the current working directory. Idempotent.",
 		parameters: Type.Object({
-			mode: StringEnumLike(["agent", "subagent"]),
-			tree: Type.String({ description: "Mock tree JSON (see PLAN.md format)" }),
-			subagentSocket: Type.Optional(
-				Type.String({ description: "pi-sock socket path of the design subagent (subagent mode)" }),
-			),
-			title: Type.Optional(Type.String()),
-			wait: Type.Optional(
-				Type.Boolean({ description: "Block until window close / send-back instead of returning immediately" }),
-			),
+			title: Type.Optional(Type.String({ description: "Window title" })),
 		}),
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		async execute(_toolCallId, params, _signal, onUpdate, _ctx) {
-			// TODO: talk to the sidecar control socket; stream revision events via onUpdate.
-			return {
-				content: [{ type: "text", text: `mock_open is not implemented yet (mode=${params.mode})` }],
-				details: {},
-			};
+		async execute(_toolCallId, _params, _signal, _onUpdate, _ctx) {
+			return { content: [{ type: "text", text: "mock_open is not implemented yet" }], details: {} };
 		},
 	});
 
 	pi.registerTool({
-		name: "mock_update",
-		label: "Update UI mock",
-		description: "Replace the mock tree in an open UI mock window (agent mode).",
-		parameters: Type.Object({
-			session: Type.String({ description: "Session id returned by mock_open" }),
-			tree: Type.String({ description: "Full replacement mock tree JSON" }),
-		}),
+		name: "mock_build",
+		label: "Build mock",
+		description:
+			"Run the esbuild build (build.mjs) for the mock app in the current working directory and push the new pages to the open editor.",
+		parameters: Type.Object({}),
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
-			return {
-				content: [{ type: "text", text: `mock_update is not implemented yet (session=${params.session})` }],
-				details: {},
-			};
+		async execute(_toolCallId, _params, _signal, _onUpdate, _ctx) {
+			return { content: [{ type: "text", text: "mock_build is not implemented yet" }], details: {} };
 		},
 	});
 
 	pi.registerTool({
-		name: "mock_wait",
-		label: "Wait for UI mock feedback",
+		name: "mock_screenshot",
+		label: "Screenshot mock",
 		description:
-			"Block until the user clicks 'send back' (returns annotation package: text comments, bound component subtrees, annotation images on disk) or closes the window.",
+			"Capture the current mock pages as images without changing the user's view; returns paths (and image content) for self-inspection before a review.",
 		parameters: Type.Object({
-			session: Type.String({ description: "Session id returned by mock_open" }),
-			timeout: Type.Optional(Type.Number({ description: "Seconds before giving up (default 1800)" })),
+			pages: Type.Optional(Type.Array(Type.String(), { description: "Page names; default: all" })),
 		}),
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
-			return {
-				content: [{ type: "text", text: `mock_wait is not implemented yet (session=${params.session})` }],
-				details: {},
-			};
+		async execute(_toolCallId, _params, _signal, _onUpdate, _ctx) {
+			return { content: [{ type: "text", text: "mock_screenshot is not implemented yet" }], details: {} };
 		},
 	});
-}
 
-// Small local enum helper to avoid the extra import during scaffolding.
-// Replace with StringEnum from "@earendil-works/pi-ai" (Google-API compatible) later.
-function StringEnumLike<const T extends readonly string[]>(values: T) {
-	return {
-		type: "string" as const,
-		enum: values,
-	};
+	pi.registerTool({
+		name: "mock_review",
+		label: "Ask user to review mock",
+		description:
+			"Hand the mock over to the user for markup. BLOCKS until the user sends annotations, approves, or closes the window. The result is the markup package (picked pages, typed description, comments with CSS selectors, draw crops under ann/).",
+		parameters: Type.Object({
+			note: Type.Optional(Type.String({ description: "Short note shown to the user: what changed, what to look at" })),
+		}),
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		async execute(_toolCallId, _params, _signal, _onUpdate, _ctx) {
+			return { content: [{ type: "text", text: "mock_review is not implemented yet" }], details: {} };
+		},
+	});
 }
