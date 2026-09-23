@@ -1,7 +1,10 @@
 node_modules/
-dist/
 __pycache__/
 *.egg-info/
 .venv/
 *.log
 .DS_Store
+
+# editor/dist IS committed: pi git packages run `npm install` but not build
+# scripts, so the extension needs the prebuilt editor bundle in-tree.
+!editor/dist/

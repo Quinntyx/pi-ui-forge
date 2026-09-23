@@ -1,0 +1,44 @@
+.canvas-host {
+	background: var(--tl-color-background, #f2f2f2);
+}
+
+.mock-frame-iframe {
+	position: absolute;
+	inset: 0;
+	pointer-events: none; /* annotate/inspect default: tldraw owns the pointer */
+}
+
+/* interact mode: the mock is live */
+.forge-interact .mock-frame-iframe {
+	pointer-events: auto !important;
+}
+
+/* pick mode: clicks go into the iframe but are captured by the runtime */
+.forge-picking .mock-frame-iframe {
+	pointer-events: auto !important;
+}
+
+.mock-frame-label {
+	position: absolute;
+	top: -26px;
+	left: 0;
+	padding: 1px 8px;
+	font: 600 13px/20px ui-sans-serif, system-ui, sans-serif;
+	color: #444;
+	background: #ffffffcc;
+	border-radius: 6px 6px 0 0;
+	white-space: nowrap;
+	pointer-events: none;
+}
+
+.comment-pin {
+	width: 24px;
+	height: 24px;
+	border-radius: 12px;
+	background: #ff4d6d;
+	color: #fff;
+	font: 700 12px/24px ui-sans-serif, system-ui, sans-serif;
+	text-align: center;
+	box-shadow: 0 1px 4px rgb(0 0 0 / 35%);
+	pointer-events: none;
+}

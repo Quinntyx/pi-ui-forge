@@ -17,20 +17,29 @@ in TypeScript, in-process.
   HTTP/WS server + Electron lifecycle + tools
   (`mock_open`, `mock_build`, `mock_screenshot`, `mock_review`)
 - `editor/` — React + tldraw editor (pages as same-origin iframes in frames,
-  interact/annotate modes, inspect-pick with CSS-selector addressing)
-- `shell/` — minimal Electron main process (one BrowserWindow, quits on close)
-- `skills/ui-mock/` — parent-facing skill: how to spawn and reap the design
-  session
-- `skills/design-subagent/` — subagent-facing skill: loop mechanics + taste
+  interact/annotate modes, inspect-pick with CSS-selector addressing);
+  `editor/dist` is committed prebuilt (pi git installs run `npm install`,
+  not builds)
+- `shell/` — minimal Electron main (one BrowserWindow, quit-on-close,
+  Wayland-friendly, answers full-window capture requests)
+- `scripts/` — `build.mjs` (esbuild mock-app build written into each mock
+  folder), `runtime.js` (injected into mock pages: capture + inspect-pick),
+  `smoke-server.mjs` (end-to-end smoke test harness)
+- `skills/ui-mock/` — parent-facing skill: spawn, wait, replicate pixel-near
+- `skills/design-subagent/` — subagent-facing skill: loop mechanics, taste,
+  mock-speed rules (dummy data, no useState)
 
-## Prerequisite
+## Prerequisites
 
-`pi-subagents` needs a `profile=` kwarg (`subagents.agent(..., profile="design-subagents", cwd=...)`,
-default `"subagents"`) — see PLAN.md §2.
-
-## Install (once real)
-
-- `pi-subagents`: add the `profile` kwarg
-- create `~/.config/pi/profiles/design-subagents` (mirror the `subagents`
+- `pi-subagents` ≥ the `profile=` kwarg version
+  (`subagents.agent(..., profile="design-subagents", cwd=...)`)
+- a `~/.config/pi/profiles/design-subagents` profile (mirror the `subagents`
   profile) with pi-ui-forge in its `packages`
-- main profile: install `skills/ui-mock/`
+
+## Development
+
+```sh
+npm install                # deps incl. electron + esbuild
+npm run build:editor       # rebuild editor/dist after editor/src changes
+npm run smoke              # end-to-end smoke test (needs a display; tmux OK)
+```

@@ -1,11 +1,14 @@
 # pi-ui-forge — design
 
-> Status: draft v3. Decisions locked: Electron shell, real React mocks, no
-> hot reload (GUI updates only on explicit review), durable `mock_folder` cwd
-> owned by the parent, dedicated `design-subagents` pi profile, questionnaire-
-> style blocking feedback loop, **no main-profile plugin at all** — the
-> frontend talks to the design subagent directly, all server-side code lives
-> inside the subagent's pi process, TypeScript end to end.
+> Status: **v3 implemented (v0.1)**. The end-to-end path is built and
+> smoke-tested: extension server + Electron window + tldraw editor with
+> iframe pages + esbuild build pipeline + blocking review loop + screenshot
+> capture. Decisions locked: Electron shell, real React mocks, no hot reload
+> (GUI updates only on explicit build), durable `mock_folder` cwd owned by
+> the parent, dedicated `design-subagents` pi profile, questionnaire-style
+> blocking feedback loop, no main-profile plugin — the frontend talks to the
+> design subagent directly, all server-side code lives inside the
+> subagent's pi process, TypeScript end to end.
 
 ## 1. Concept
 
@@ -197,10 +200,12 @@ Not a plugin; just a skill. Teaches the parent:
    choose `mock_folder` per the user's intent (worktree for git sync);
 2. write the brief: what the user asked for, pages to propose, constraints;
 3. `await handle` — the subagent blocks in `mock_review` for as long as the
-   user is marking up; that's expected, not a hang (set generous
+   user is marking up; that's expected, not a hang (generous
    `wait_async` timeouts);
-4. on settle: read `mock_folder/design-notes.md` + `shots/` for the summary;
-   `subagents.finish()`.
+4. on settle: read `design-notes.md` + the final page images under `shots/`
+   (also included in the subagent's final summary) — **replicate the
+   approved mock pixel-near** in the real codebase;
+5. `subagents.finish()`.
 
 ### `design-subagent` (design-subagents profile) — loop mechanics
 
@@ -210,25 +215,32 @@ Not a plugin; just a skill. Teaches the parent:
    hierarchical guesses;
 3. **self-inspect before review** — `mock_screenshot`, read every changed
    page, iterate internally; never push visual regressions to the user;
-4. **real React** — idiomatic components, real state, CSS as in any project;
-5. **alternation discipline** — `mock_review` is the only way to hand over;
-   when it returns, act on exactly that feedback; settle only on
-   approve/close; never loop autonomously.
+4. **real React, mock-speed rules** — dummy data always; zero `useState`
+   unless required for an animation (or the user explicitly asked for real
+   behavior); favor showing the requested change fast over robustness;
+5. **canvas layout discretion** — several single-page canvases (variant
+   picking) liberally early, sparingly later; one canvas with multiple
+   side-by-side page frames is the standard once the design crystallizes —
+   the subagent decides, the tool supports both shapes;
+6. **alternation discipline** — `mock_review` is the only handover; settle
+   only on approve/close, with final page images in the summary.
 
-## 7. Build order
+## 7. Implementation status
 
-1. **M0 — prerequisite**: pi-subagents `profile` kwarg (+ smoke test spawning
-   into a scratch profile).
-2. **M1 — pipeline proof**: extension serves the editor; Electron opens;
-   `build.mjs` compiles a demo app in `mock_folder`; pages mount as iframes
-   in tldraw frames; interact mode works.
-3. **M2 — the loop**: `mock_review` blocking round-trip (send back → tool
-   result), `mock_build`, annotate mode (draw/text/pick with selector
-   addressing, description box), approve/close termination.
-4. **M3 — polish**: `mock_screenshot` (view-preserving capture),
-   draw-crop rasterization + stroke compositing, selector re-resolve across
-   revisions, WS reconnect, page-selection UX, revision history as tldraw
-   app-state (canvas keeps prior frames for comparison).
+1. **M0 — done**: pi-subagents `profile` kwarg (tests + docs in pi-subagents).
+2. **M1 — done and smoke-tested**: extension serves the editor; Electron
+   opens (Wayland via `--ozone-platform-hint=auto`); `build.mjs` (esbuild,
+   react aliased from the plugin's node_modules) compiles demo apps;
+   pages mount as same-origin iframes in tldraw frames; interact mode works
+   (iframe pointer-events toggling).
+3. **M2 — done**: `mock_review` blocking round-trip (review-start → send-back
+   → tool result with images), `mock_build` (one canvas + side-by-side
+   frames, or variant canvases), approve/close termination paths.
+4. **M3 — done core**: `mock_screenshot` (view-preserving DOM-serialization
+   capture via injected vendor runtime), draw crops around tldraw shapes
+   (viewport capture cropped by camera math), selector addressing in
+   comments, WS reconnect. Remaining: selector re-resolve across revisions,
+   page-selection UX polish, annotation persistence tuning.
 5. **Later**: Tauri shell, taste-skill library, parent-side diffing of
    revisions, exporting mock → code PR.
 
