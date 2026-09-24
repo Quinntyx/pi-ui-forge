@@ -16,6 +16,9 @@
 	--green-edge: #7d9868; --green-ink: #48583e; --green-bright: #b3ce8e;
 	--on-accent: #232a26; --on-orange: #2b1d14; --on-blue: #1a2b28;
 	--shadow: rgba(0, 0, 0, 0.35);
+	--sw-black: #272e33; --sw-grey: #7a8478; --sw-lavender: #e7ccd9; --sw-violet: #d699b6;
+	--sw-sea: #5b9cb5; --sw-sky: #7fbbb3; --sw-yellow: #dbbc7f; --sw-orange: #e69875;
+	--sw-olive: #7d9868; --sw-lime: #a7c080; --sw-coral: #e67e80; --sw-red: #d55555;
 }
 
 /* ── everforest light medium ── */
@@ -30,7 +33,10 @@
 	--banner: #e9e3c5;
 	--green-edge: #a9b549; --green-ink: #fdf6e3; --green-bright: #9db32e;
 	--on-accent: #fdf6e3; --on-orange: #fdf6e3; --on-blue: #fdf6e3;
-	--shadow: rgba(96, 86, 50, 0.3);
+	--shadow: rgba(96, 86, 50, 0.15);
+	--sw-black: #1d2521; --sw-grey: #939f91; --sw-lavender: #f2d0e4; --sw-violet: #df69ba;
+	--sw-sea: #3a94c5; --sw-sky: #74b6dd; --sw-yellow: #dfa000; --sw-orange: #f57d26;
+	--sw-olive: #8da101; --sw-lime: #a9b549; --sw-coral: #f87060; --sw-red: #e03e36;
 }
 
 .app {
@@ -86,6 +92,9 @@
 	padding: 3px 10px; border-radius: 3px; cursor: pointer;
 }
 #topbar-approve:hover { color: var(--fg); border-color: var(--grey); }
+
+.app.light .frame-label { color: var(--fg); }
+.app.light .c-yellow { color: #4a3f25; }
 
 /* light/dark theme switcher — left of the mode toggle */
 #theme-toggle {
@@ -168,7 +177,7 @@
 
 /* hover tooltip on the numbered badge: selector + text */
 .pin-tip {
-	position: absolute; bottom: calc(100% + 9px); left: 50%; transform: translateX(-50%);
+	position: absolute; bottom: calc(100% + 9px); left: 0; transform: none;
 	background: var(--bar); border: 1px solid var(--bg3); padding: 6px 9px;
 	font-size: 10.5px; line-height: 1.45; color: var(--faint);
 	white-space: nowrap; opacity: 0; pointer-events: none;
@@ -185,16 +194,16 @@
 .tip-right .pin-tip::after { left: auto; right: 10px; transform: none; }
 
 /* ── popup comment editor — appears above the pick, styled like the tooltip ── */
-.pop-anchor { position: relative; }
+.pop-anchor { position: relative; width: fit-content; }
 #comment-pop {
-	position: absolute; bottom: calc(100% + 9px); left: -1px;
+	position: absolute; bottom: calc(100% + 9px); left: 0; transform: none;
 	width: 250px; z-index: 45; text-align: left;
 	background: var(--bar); border: 1px solid var(--bg3);
 	box-shadow: 3px 3px 0 var(--shadow);
 	padding: 6px 9px; display: flex; gap: 8px; align-items: flex-start;
 }
 #comment-pop::after {
-	content: ""; position: absolute; top: 100%; left: 20px;
+	content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
 	border: 5px solid transparent; border-top-color: var(--bg3);
 }
 .pop-main { flex: 1; min-width: 0; }
@@ -241,12 +250,18 @@
 	display: flex; flex-direction: column; gap: 10px;
 }
 .sp-colors {
-	display: grid; grid-template-columns: repeat(5, 24px); gap: 5px; justify-content: center;
+	display: grid; grid-template-columns: repeat(4, 24px); gap: 6px; justify-content: center;
 }
 .sw {
-	width: 24px; height: 24px; border-radius: 3px; padding: 0; cursor: pointer;
-	border: 1px solid rgba(0, 0, 0, 0.28);
+	width: 24px; height: 24px; border-radius: 50%; padding: 0; cursor: pointer;
+	border: 1px solid rgba(0, 0, 0, 0.18);
 }
+.k-black { background: var(--sw-black); } .k-grey { background: var(--sw-grey); }
+.k-lavender { background: var(--sw-lavender); } .k-violet { background: var(--sw-violet); }
+.k-sea { background: var(--sw-sea); } .k-sky { background: var(--sw-sky); }
+.k-yellow { background: var(--sw-yellow); } .k-orange { background: var(--sw-orange); }
+.k-olive { background: var(--sw-olive); } .k-lime { background: var(--sw-lime); }
+.k-coral { background: var(--sw-coral); } .k-red { background: var(--sw-red); }
 .sw:hover { transform: scale(1.08); }
 .sw-on { box-shadow: 0 0 0 2px var(--bg1), 0 0 0 4px var(--fg); }
 
@@ -331,7 +346,7 @@
 	display: flex; align-items: center; justify-content: center;
 	border: 1px solid var(--green-edge); background: var(--green); color: var(--green-ink);
 	cursor: pointer; font: inherit; font-size: 15px; font-weight: 700;
-	padding: 0 0 2px;
+	padding: 0 0 4px;
 }
 #send-back:hover { background: var(--green-bright); }
 

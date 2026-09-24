@@ -35,7 +35,7 @@ export default function GlassMock({ variant = "plain", label }: {
 							{review && <Pin p={pins[2]} />}
 						</div>
 						{variant === "annotate" && (
-							<div id="comment-pop" style={{ left: 8 }}>
+							<div id="comment-pop">
 								<span className="pin c-blue">4</span>
 								<span className="pop-main">
 									<input className="pop-input" defaultValue="Active pill needs 90% opacity fill" aria-label="new comment" autoFocus />

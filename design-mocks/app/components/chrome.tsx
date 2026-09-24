@@ -14,7 +14,7 @@ const designs = [
 ];
 
 const tools = [
-	{ id: "select", active: false, title: "Select (V)", d: "M4.5 2.5v11l3-2.6 1.8 3.8 2.3-1.1-1.8-3.7h4l-9.3-7.4z" },
+	{ id: "select", title: "Select (V)", d: "M4.5 2.5v11l3-2.6 1.8 3.8 2.3-1.1-1.8-3.7h4l-9.3-7.4z" },
 	{ id: "hand", active: false, title: "Hand (H)", d: "M6 8V4.4a.9.9 0 0 1 1.8 0V8m0-2.6a.9.9 0 0 1 1.8 0V8m0-1.4a.9.9 0 0 1 1.8 0V9m0-.6a.9.9 0 0 1 1.8 0v2.4c0 2.3-1.8 4-4.2 4-2 0-3-.8-4.2-2.6L4.3 10c-.5-.7.4-1.6 1.1-1l.6.5z" },
 	{ id: "draw", active: false, title: "Draw (D)", d: "M3 13.5l1-3.2 7-7 2.2 2.2-7 7-3.2 1zM10.2 4.1l2.2 2.2" },
 	{ id: "eraser", active: false, title: "Eraser (E)", d: "M6.5 13.5H13M4.2 11.6l4.2-4.2 3.4 3.4-2.5 2.5H6.7l-2.5-2.5.9-.9 4.4-4.4 3.4 3.4" },
@@ -26,22 +26,40 @@ const tools = [
 	{ id: "frame", active: false, title: "Frame (F)", d: "M4 2v12M12 2v12M2 4h12M2 12h12" },
 ];
 
-// tldraw-exact 2×5 palette, reskinned to Everforest
-const tldColors = [
-	{ id: "bone", v: "#d3c6aa" },
-	{ id: "grey", v: "#859289" },
-	{ id: "ink", v: "#272e33" },
-	{ id: "purple", v: "#d699b6" },
-	{ id: "red", v: "#e67e80" },
-	{ id: "orange", v: "#e69875" },
-	{ id: "yellow", v: "#dbbc7f" },
-	{ id: "green", v: "#a7c080" },
-	{ id: "aqua", v: "#83c092" },
-	{ id: "blue", v: "#7fbbb3" },
-];
+// tldraw palette order/grid: 3 rows × 4 cols, black upper-left (everforest reskin;
+// hue values live in CSS vars so they follow the light/dark theme)
+const tldColors = ["black", "grey", "lavender", "violet", "sea", "sky", "yellow", "orange", "olive", "lime", "coral", "red"];
+
+function DashIcon({ kind }: { kind: "solid" | "dashed" | "dotted" | "thin" }) {
+	const base = { cx: 8.5, cy: 8.5, r: 5.2, fill: "none", stroke: "currentColor" } as const;
+	if (kind === "solid") return <svg width="17" height="17" viewBox="0 0 17 17" aria-hidden="true"><circle {...base} strokeWidth={2.2} /></svg>;
+	if (kind === "dashed") return <svg width="17" height="17" viewBox="0 0 17 17" aria-hidden="true"><circle {...base} strokeWidth={1.8} strokeDasharray="2.8 2.4" /></svg>;
+	if (kind === "dotted") return <svg width="17" height="17" viewBox="0 0 17 17" aria-hidden="true"><circle {...base} strokeWidth={1.9} strokeDasharray="0.2 3.4" strokeLinecap="round" /></svg>;
+	return <svg width="17" height="17" viewBox="0 0 17 17" aria-hidden="true"><circle {...base} strokeWidth={1} /></svg>;
+}
+
+function FillIcon({ kind }: { kind: "none" | "half" | "full" | "pattern" }) {
+	const front = kind === "full"
+		? { fill: "currentColor", stroke: "currentColor", strokeWidth: 1.3 }
+		: { fill: "none", stroke: "currentColor", strokeWidth: 1.3 };
+	return (
+		<svg width="17" height="17" viewBox="0 0 17 17" aria-hidden="true">
+			<path d="M6.5 2.2h8v8" fill="none" stroke="currentColor" strokeWidth="1.1" />
+			<path d="M4.5 4.2h8v8" fill="none" stroke="currentColor" strokeWidth="1.1" />
+			<rect x="2.5" y="6.2" width="8" height="8" rx="1.5" {...front} />
+			{kind === "half" && <path d="M2.5 10.2h8v4h-8z" fill="currentColor" />}
+			{kind === "pattern" && (
+				<g fill="currentColor">
+					<circle cx="4.8" cy="9" r="0.9" /><circle cx="6.9" cy="9" r="0.9" /><circle cx="9" cy="9" r="0.9" />
+					<circle cx="4.8" cy="11.6" r="0.9" /><circle cx="6.9" cy="11.6" r="0.9" /><circle cx="9" cy="11.6" r="0.9" />
+				</g>
+			)}
+		</svg>
+	);
+}
 
 export default function Chrome({ design, state }: { design: Design; state: State }) {
-	const [light, setLight] = useState(false);
+	const [light, setLight] = useState(true); // light-medium default; moon flips to dark
 	const annotate = state === "annotate";
 	const interact = state === "interact";
 	const Mock = design === "wiki" ? WikiMock : design === "glass" ? GlassMock : BrutalMock;
@@ -98,18 +116,20 @@ export default function Chrome({ design, state }: { design: Design; state: State
 					{!interact && (
 						<>
 							<div id="dock-stack">
-								<div id="pick-panel" title="pick element (P) — cancels the selected tldraw tool" aria-label="pick element">
-									<button id="pick-btn" className={annotate ? "pick-btn-on" : state === "work" ? "pick-btn-dim" : ""} disabled={state === "work"} aria-label="pick element (P)">
-										<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-											<rect x="7" y="7" width="7" height="7" fill="none" stroke="currentColor" strokeWidth="1.3" />
-											<path d="M2.5 1.5v9.6l2.8-2.4 1.6 3.5 2-1-1.6-3.4h3.4z" fill="currentColor" />
-										</svg>
-									</button>
-									<span className="mode-key">P</span>
-								</div>
+								{annotate && (
+									<div id="pick-panel" title="pick element (P) — cancels the selected tldraw tool" aria-label="pick element">
+										<button id="pick-btn" className="pick-btn-on" aria-label="pick element (P)">
+											<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+												<rect x="7" y="7" width="7" height="7" fill="none" stroke="currentColor" strokeWidth="1.3" />
+												<path d="M2.5 1.5v9.6l2.8-2.4 1.6 3.5 2-1-1.6-3.4h3.4z" fill="currentColor" />
+											</svg>
+										</button>
+										<span className="mode-key">P</span>
+									</div>
+								)}
 								<div id="tool-dock" role="toolbar" aria-label="tools">
 								{tools.map((t) => (
-									<button key={t.id} className={`tool ${t.active ? "tool-active" : ""}`} title={t.title} aria-label={t.title}>
+									<button key={t.id} className={`tool ${t.id === "select" && state === "work" ? "tool-active" : ""}`} title={t.title} aria-label={t.title}>
 										<svg width="17" height="17" viewBox="0 0 16 16" aria-hidden="true">
 											<path d={t.d} fill={t.id === "select" ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
 										</svg>
@@ -121,24 +141,24 @@ export default function Chrome({ design, state }: { design: Design; state: State
 							<div id="style-panel" aria-label="style">
 								<div className="sp-colors" id="sp-color">
 									{tldColors.map((c) => (
-										<button key={c.id} className={`sw ${c.id === "orange" ? "sw-on" : ""}`} title={c.id} style={{ background: c.v }} aria-label={c.id} />
+										<button key={c} className={`sw k-${c}${c === "orange" ? " sw-on" : ""}`} title={c} aria-label={c} />
 									))}
 								</div>
 								<div className="sp-slider-row" id="sp-opacity" title="opacity">
 									<span className="sp-slider-fill" />
 									<span className="sp-slider-thumb" />
 								</div>
-								<div className="sp-cells" id="sp-dash">
-									<button className="sp-cell sp-cell-active" title="dash solid"><span className="d-solid" /></button>
-									<button className="sp-cell" title="dash dashed"><span className="d-dashed" /></button>
-									<button className="sp-cell" title="dash dotted"><span className="d-dotted" /></button>
-									<button className="sp-cell" title="dash mixed"><span className="d-mixed" /></button>
-								</div>
 								<div className="sp-cells" id="sp-fill">
-									<button className="sp-cell" title="fill none"><span className="g-none" /></button>
-									<button className="sp-cell" title="fill half"><span className="g-half" /></button>
-									<button className="sp-cell" title="fill solid"><span className="g-full" /></button>
-									<button className="sp-cell sp-cell-active" title="fill pattern"><span className="g-hatch" /></button>
+									<button className="sp-cell" title="fill none"><FillIcon kind="none" /></button>
+									<button className="sp-cell" title="fill half"><FillIcon kind="half" /></button>
+									<button className="sp-cell sp-cell-active" title="fill solid"><FillIcon kind="full" /></button>
+									<button className="sp-cell" title="fill pattern"><FillIcon kind="pattern" /></button>
+								</div>
+								<div className="sp-cells" id="sp-dash">
+									<button className="sp-cell sp-cell-active" title="dash solid"><DashIcon kind="solid" /></button>
+									<button className="sp-cell" title="dash dashed"><DashIcon kind="dashed" /></button>
+									<button className="sp-cell" title="dash dotted"><DashIcon kind="dotted" /></button>
+									<button className="sp-cell" title="dash thin"><DashIcon kind="thin" /></button>
 								</div>
 								<div className="sp-cells" id="sp-size">
 									<button className="sp-cell" title="size S"><span className="sp-size-s">S</span></button>
@@ -174,16 +194,10 @@ export default function Chrome({ design, state }: { design: Design; state: State
 
 					{state === "work" && (
 						<div id="prompt-stack">
-							<div id="review-banner">
-								<span className="banner-round">R2</span>
-								<span className="banner-text">
-									Working on your markup — recropping the image (<b>1</b>), rebalancing the heading (<b>2</b>).
-								</span>
-							</div>
 							<div id="progress-bar">
 								<div className="progress-head">
 									<span className="progress-spinner" />
-									<span>revising {designs.find((d) => d.id === design)?.name}…</span>
+									<span>revising {designs.find((d) => d.id === design)?.name} — recropping the image (<b>1</b>), rebalancing the heading (<b>2</b>)</span>
 								</div>
 								<div className="progress-meta">round 2 · 1 page · started 12s ago · esc to interrupt</div>
 							</div>

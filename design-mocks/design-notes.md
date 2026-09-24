@@ -23,6 +23,14 @@ theme (Everforest dark-medium, JetBrains Mono) around a tldraw-style canvas.
 - Bottom statusline replaces any status pill: accent segment signals state —
   green `REVIEW` / orange `WORKING` / blue `INTERACT` — plus round/page/
   comment counts and right-aligned key hints. No app identity, no version.
+- Themes: Everforest dark-medium (default) + everforest light-medium via a
+  working sun/moon `#theme-toggle` left of the mode toggle (one useState —
+  the only interactive state in the mock). All chrome colors are CSS vars
+  overridden under `.app.light`; mock frames keep their own palettes.
+- Pick-element is NOT a tldraw tool: it lives in its own floating panel
+  (`#pick-panel`) above the tool dock in a shared `#dock-stack` (10px gap),
+  armed (orange) in annotate — which deselects any tldraw tool — and dimmed
+  while working. Removed from the topbar.
 
 ## Key decisions
 - Single shared `Chrome` component (`app/components/chrome.tsx`) + three
