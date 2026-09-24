@@ -11,6 +11,7 @@ import {
 	type Editor,
 } from "tldraw";
 import { getState, setState } from "./store";
+import { setPickMode } from "./annotate";
 import { useSyncState } from "./useSyncState";
 
 // ── icons & tool table (port of the design's SVG tool set) ─────────────────
@@ -131,7 +132,9 @@ export function DockStack({ editor }: { editor: Editor | null }) {
 					aria-label="pick element (P)"
 					onClick={() => {
 						const on = !getState().pickMode;
-						setState({ pickMode: on });
+						// setPickMode (not setState) so the pick-on message reaches
+						// the page runtime inside every iframe
+						setPickMode(on);
 						if (on && editor) editor.setCurrentTool("select");
 					}}
 				>
@@ -328,8 +331,8 @@ export function ProgressBar() {
 	const calls = act?.calls?.filter((c) => c && c !== "mock_open") ?? [];
 	const main = act
 		? calls.length
-			? `${act.label ?? act.phase} — ${calls.join(", ")}`
-			: (act.label ?? act.phase)
+			? `${act.label?.trim() || act.phase} — ${calls.join(", ")}`
+			: act.label?.trim() || act.phase
 		: hasWorld
 			? `revising ${label} — ${state.description || "applying the last review"}`
 			: "the design agent is starting";
