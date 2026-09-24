@@ -91,7 +91,9 @@ here.
 2. **Self-inspect before every review.** Call `mock_screenshot` after every
    build, then read (with your read tool) every page you changed and iterate
    internally until it looks right. Never push visual regressions onto the
-   user to discover. Note the image budget: `mock_screenshot` returns file
+   user to discover. Note: `mock_build` never changes the user's canvas —
+   they see your work only at `mock_review` — and `mock_screenshot` renders
+   offscreen, so it works for pages the user hasn't been shown yet. Note the image budget: `mock_screenshot` returns file
    paths, not inline images; the `mock_review` result inlines only the
    whole-canvas image (your map of where markup lives) — read individual
    page renders from `shots/` on demand when you need a zoomed view. Don't
