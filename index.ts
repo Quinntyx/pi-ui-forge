@@ -755,6 +755,55 @@ export default function (pi: ExtensionAPI) {
 		},
 	});
 
+	// --- image budget → auto-compaction ----------------------------------------
+	//
+	// Design rounds accumulate image blocks in the conversation (review canvas
+	// shots, screenshot reads, pasted screenshots). Providers cap request size
+	// (~5-8 MiB) and reject with 413/400 long before token-based compaction
+	// would trigger. Track image bytes flowing through tool results and user
+	// messages; past the threshold, trigger ctx.compact() — old images are
+	// evicted into the summary, accepting the one-off cache invalidation.
+	const budgetState = { bytes: 0, compacting: false };
+	const budgetThreshold = (() => {
+		const mb = Number(process.env.PI_UI_FORGE_IMAGE_BUDGET_MB ?? "3.5");
+		return Number.isFinite(mb) && mb > 0 ? mb * 1024 * 1024 : 3.5 * 1024 * 1024;
+	})();
+
+	const countImages = (content: unknown): number => {
+		let bytes = 0;
+		for (const block of Array.isArray(content) ? content : []) {
+			if (block && (block as { type?: string }).type === "image") {
+				bytes += String((block as { data?: string }).data ?? "").length;
+			}
+		}
+		return bytes;
+	};
+
+	const maybeCompact = (ctx: { compact: () => void }): void => {
+		if (budgetState.bytes <= budgetThreshold || budgetState.compacting) return;
+		budgetState.compacting = true;
+		budgetState.bytes = 0;
+		console.error(
+			`[ui-forge] image budget exceeded (~${(budgetThreshold / 1024 / 1024).toFixed(1)} MB of images in context) — triggering compaction to evict old images`,
+		);
+		// compact() is fire-and-forget; re-arm after it has had time to finish
+		setTimeout(() => {
+			budgetState.compacting = false;
+		}, 120_000);
+		ctx.compact();
+	};
+
+	pi.on("tool_result", (event, ctx) => {
+		budgetState.bytes += countImages(event.content);
+		maybeCompact(ctx);
+	});
+
+	pi.on("message_end", (event, ctx) => {
+		const content = (event as { message?: { content?: unknown } }).message?.content;
+		budgetState.bytes += countImages(content);
+		maybeCompact(ctx);
+	});
+
 	pi.on("session_shutdown", async () => {
 		const s = session;
 		if (!s) return;

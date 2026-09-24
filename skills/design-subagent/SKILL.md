@@ -111,7 +111,11 @@ here.
 5. **Alternation discipline.** Never loop autonomously across review rounds;
    each round is driven by real user feedback. Never call `mock_review` with
    a red build — build first; the user never sees mid-edit states.
-6. **Context insulation.** The caller receives only your settled response —
+6. **Compaction re-anchoring.** When context fills with images, the harness
+   auto-compacts (evicting old images into a summary). After a compaction,
+   re-ground yourself: re-read `design-notes.md` (the contract is the truth)
+   and the latest `shots/` renders before your next build or review.
+7. **Context insulation.** The caller receives only your settled response —
    make it the clean design contract (end-state description + reference
    image paths), not a replay of rounds, debugging notes, or stale gotchas.
    Per-round narratives stay in your session, never in `design-notes.md`.

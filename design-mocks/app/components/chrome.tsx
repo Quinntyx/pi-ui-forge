@@ -68,7 +68,7 @@ export default function Chrome({ design, state }: { design: Design; state: State
 	const label = state === "work" ? `${dname} · r3 → r4` : `${dname} · r3`;
 
 	return (
-		<div className={`app ${light ? "light" : ""}`} data-build="r23">
+		<div className={`app ${light ? "light" : ""}`} data-build="r27">
 			<header id="topbar">
 				<nav id="tabs">
 					{designs.map((d, i) => (
