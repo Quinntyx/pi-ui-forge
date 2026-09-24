@@ -39,7 +39,10 @@ export default function App() {
 					break;
 				case "review-start":
 					setState({ phase: "review", reviewId: msg.reviewId, reviewNote: msg.note });
-					setMode("annotate");
+					if (getState().mode === "interact") setState({ mode: "annotate" });
+					break;
+				case "activity":
+					setState({ activity: msg.label ?? null });
 					break;
 				case "review-end":
 					setState({ phase: "idle" });
@@ -121,7 +124,10 @@ export default function App() {
 	};
 
 	const review = state.phase === "review";
-	const interact = !review && state.mode === "interact";
+	// interact is a real user mode (works even mid-review): it must hand the
+	// pointer to the mock iframes
+	const interact = state.mode === "interact";
+	const reviewChrome = review && !interact;
 	const working = !review && !interact;
 	const visibleMocks = state.committedCanvas
 		? state.world.mocks.filter((m) => m.id === state.committedCanvas)
@@ -141,17 +147,11 @@ export default function App() {
 					{visibleMocks.map((m) => (
 						<MockCanvas key={m.id} mock={m} active={m.id === state.activeCanvas} />
 					))}
-					{state.world.mocks.length === 0 && (
-						<div className="forge-empty">
-							waiting for the design agent to build pages…
-						</div>
-					)}
-
 					{!interact && state.phase !== "closed" && <DockStack editor={activeEditor} />}
 					{!interact && state.phase !== "closed" && <StylePanel editor={activeEditor} />}
 
-					{review && <PromptStack onSend={doSend} busy={busy} />}
-					{working && state.world.mocks.length > 0 && <ProgressBar />}
+					{reviewChrome && <PromptStack onSend={doSend} busy={busy} />}
+					{working && <ProgressBar />}
 					{state.phase === "closed" && (
 						<div className="forge-empty">session closed — you can close this window</div>
 					)}

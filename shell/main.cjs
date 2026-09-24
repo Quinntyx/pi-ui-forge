@@ -84,6 +84,18 @@ function connect() {
 		} catch {
 			return;
 		}
+		if (msg.type === "forge:eval" && win) {
+			// debug bridge: run JS in the editor renderer (used by the dev
+			// smoke harness to probe hit-testing and DOM state)
+			try {
+				const result = await win.webContents.executeJavaScript(msg.code);
+				ws.send(JSON.stringify({ type: "forge:eval-result", reqId: msg.reqId, result }));
+			} catch (err) {
+				ws.send(JSON.stringify({ type: "forge:eval-result", reqId: msg.reqId, error: String(err) }));
+			}
+			return;
+		}
+
 		if (msg.type === "forge:page-shot") {
 			// offscreen render of /app/<page>/ — never touches the user's view
 			try {

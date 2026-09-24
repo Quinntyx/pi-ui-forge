@@ -119,7 +119,8 @@ export function TopBar({ onApprove }: { onApprove: () => void }) {
 export function DockStack({ editor }: { editor: Editor | null }) {
 	const state = useSyncState();
 	const working = state.phase !== "review";
-	const activeTool = editor ? editor.getCurrentToolId() : null;
+	// while the picker is armed it IS the active tool: no tldraw tool shows active
+	const activeTool = state.pickMode ? null : editor ? editor.getCurrentToolId() : null;
 	return (
 		<div id="dock-stack">
 			<div id="pick-panel" title="pick element (P) — cancels the selected tldraw tool" aria-label="pick element">
@@ -244,7 +245,7 @@ export function PromptStack({
 	busy: boolean;
 }) {
 	const state = useSyncState();
-	const ref = useRef<HTMLInputElement>(null);
+	const ref = useRef<HTMLTextAreaElement>(null);
 	const proposal = state.world.mocks.length > 1 && !state.committedCanvas;
 	return (
 		<div id="prompt-stack">
@@ -274,14 +275,20 @@ export function PromptStack({
 				)}
 				<div id="prompt-input-row">
 					<span className="prompt-caret">›</span>
-					<input
+					<textarea
 						ref={ref}
+						rows={1}
 						className="prompt-input"
 						placeholder="Describe what you want changed (⏎ to send back)…"
 						value={state.description}
-						onChange={(e) => setState({ description: e.target.value })}
+						onChange={(e) => {
+							setState({ description: e.target.value });
+							e.target.style.height = "auto";
+							e.target.style.height = `${e.target.scrollHeight}px`;
+						}}
 						onKeyDown={(e) => {
-							if (e.key === "Enter" && !busy) {
+							if (e.key === "Enter" && !e.shiftKey && !busy) {
+								e.preventDefault();
 								if (proposal) setState({ committedCanvas: state.activeCanvas });
 								else onSend();
 							}
@@ -309,18 +316,25 @@ export function PromptStack({
 
 export function ProgressBar() {
 	const state = useSyncState();
-	const label = state.world.mocks.find((m) => m.id === state.activeCanvas)?.label ?? "mock";
+	const label = state.world.mocks.find((m) => m.id === state.activeCanvas)?.label;
+	const hasWorld = state.world.mocks.length > 0;
 	return (
 		<div id="prompt-stack">
 			<div id="progress-bar">
 				<div className="progress-head">
 					<span className="progress-spinner" />
 					<span>
-						revising {label} — {state.description || "applying the last review"}
+						{state.activity
+							? `working — ${state.activity}`
+							: hasWorld
+								? `revising ${label} — ${state.description || "applying the last review"}`
+								: "the design agent is starting"}
 					</span>
 				</div>
 				<div className="progress-meta">
-					round {Math.max(1, state.reviewId)} · esc to interrupt
+					{hasWorld
+						? `round ${Math.max(1, state.reviewId)} · esc to interrupt`
+						: "no pages yet · pages appear when the agent hands the mock over · esc to interrupt"}
 				</div>
 			</div>
 		</div>

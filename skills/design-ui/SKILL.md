@@ -35,10 +35,16 @@ main agent or a dedicated design subagent.
   - **one entry with several pages** → one canvas, pages as side-by-side
     frames (the standard view once the design has crystallized);
   - **several single-page entries** → several canvases (tabs), one per
-    interpretation, for the user to pick between. Use these **liberally
-    early** in UI design and **rarely later**: as mocks grow, building many
-    variants gets slow and the loop feels sluggish. Switch to the single-
-    canvas multi-page layout once the style has settled.
+    interpretation, for the user to pick between.
+- **Variant escalation (important, do not skip).** When the design direction
+  is still undecided, your FIRST proposals must be **2–3 deliberately
+  different, deliberately SMALL variants** — typically one page each
+  (sometimes two), covering the same core content so they compare
+  apples-to-apples. Ask the user to pick one. Only after the pick, build
+  the chosen direction out at full scope: the complete page set, real
+  content density, full states. Never burn the user on three complete
+  designs — variants are for choosing a *style*, not for scope; scope
+  work happens once, in the chosen style.
 - `mock_screenshot` — capture current pages without changing the user's view;
   returns paths/images for you to inspect
 - `mock_review` — **blocking**: flips the GUI to annotate mode and does not

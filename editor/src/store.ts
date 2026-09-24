@@ -25,6 +25,8 @@ export interface AppState {
 	comments: ForgeComment[];
 	/** popup comment editor anchored at a picked element */
 	popup: PopupState | null;
+	/** live agent activity label (e.g. "writing app/pages/home.tsx") */
+	activity: string | null;
 	theme: "light" | "dark";
 }
 
@@ -42,6 +44,7 @@ let state: AppState = {
 	description: "",
 	comments: [],
 	popup: null,
+	activity: null,
 	theme: "light",
 };
 

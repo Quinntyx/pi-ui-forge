@@ -285,6 +285,26 @@ function handleConnection(s: ForgeSession, ws: WebSocket, kind: "editor" | "shel
 			return;
 		}
 
+		if (msg.type === "forge:eval" && kind === "editor") {
+			// debug bridge: forward to the Electron shell for executeJavaScript
+			const shell = shellClient(s);
+			if (shell) {
+				shell.send(
+					JSON.stringify({
+						type: "forge:eval",
+						reqId: (msg as { reqId: string }).reqId,
+						code: (msg as { code: string }).code,
+					}),
+				);
+			}
+			return;
+		}
+
+		if (msg.type === "forge:eval-result" && kind === "shell") {
+			broadcastEditors(s, msg);
+			return;
+		}
+
 		if (msg.type === "forge:page-shot-result" && kind === "shell") {
 			const waiter = s.shotWaiters.get((msg as { reqId: string }).reqId);
 			if (waiter) {
@@ -812,6 +832,49 @@ export default function (pi: ExtensionAPI) {
 			],
 			continue: true,
 		};
+	});
+
+	// --- live agent activity → editor progress -------------------------------
+	//
+	// The editor's working screen shows what the agent is doing. Every tool
+	// call (the design agent's own tools included) is summarized into a short
+	// label and pushed to connected editors.
+	const activityLabel = (toolName: string, input: Record<string, unknown> | undefined): string => {
+		const arg = input ?? {};
+		const short = (v: unknown, n = 44) => (typeof v === "string" ? v.replace(/^.*[\\/]/, "").slice(0, n) : "");
+		switch (toolName) {
+			case "read":
+				return `reading ${short(arg.path)}`;
+			case "write":
+				return `writing ${short(arg.path)}`;
+			case "edit":
+				return `editing ${short(arg.path)}`;
+			case "bash":
+				return `running ${short(arg.command, 56)}`;
+			case "mock_build":
+				return "building the mock";
+			case "mock_screenshot":
+				return "self-inspecting screenshots";
+			case "mock_review":
+				return "handing the mock over";
+			case "mock_open":
+				return "opening the editor";
+			default:
+				return `using ${toolName}`;
+		}
+	};
+	pi.on("tool_call", (event) => {
+		if (session && !session.closed) {
+			broadcastEditors(session, {
+				type: "activity",
+				label: activityLabel(event.toolName, event.input as Record<string, unknown> | undefined),
+			});
+		}
+	});
+	pi.on("turn_start", () => {
+		if (session && !session.closed) {
+			broadcastEditors(session, { type: "activity", label: "thinking" });
+		}
 	});
 
 	pi.on("session_shutdown", async () => {

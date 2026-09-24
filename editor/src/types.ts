@@ -60,6 +60,7 @@ export type HostToEditor =
 	| { type: "session-closed" }
 	| { type: "page-shot-request"; reqId: string; pages: string[] | null }
 	| { type: "pick"; on: boolean }
+	| { type: "activity"; label: string | null }
 	| { type: "shell-capture-result" | "forge:capture-result"; reqId: string; dataUrl: string | null }
 	| { type: "page-shot-result"; reqId: string; shots: { page: string; image: string }[] };
 
