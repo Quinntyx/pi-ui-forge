@@ -2,10 +2,25 @@
 // Connects to the extension's WS server as the `shell` client and answers
 // capture requests with full-window screenshots (webContents.capturePage).
 //
-// Usage: electron shell/main.js --ozone-platform-hint=auto <url> <ws-url>
-// Usage: electron [flags] shell/main.js <editor-url>
+// Usage: electron [flags] shell/main.cjs <editor-url>
 
-const args = process.argv.slice(2); // argv[1] = shell/main.js; rest are ours
+// Orphaned windows outlive the extension that spawned them; any write to the
+// dead stdio pipe must not crash the window (the extension spawns with stdio
+// piped for diagnostics).
+const safeLog = (...args) => {
+	try {
+		// eslint-disable-next-line no-console
+		console.log(...args);
+	} catch {
+		/* EPIPE etc. — the parent is gone; logging is best-effort */
+	}
+};
+process.on("uncaughtException", (err) => {
+	if (String(err).includes("EPIPE")) return; // dead stdio pipe: ignore
+	try { console.error("forge shell: uncaught", err); } catch {}
+});
+
+const args = process.argv.slice(2); // argv[1] = shell/main.cjs; rest are ours
 const urlArg = args.find((a) => a.startsWith("http"));
 
 const { app, BrowserWindow } = require("electron");
@@ -15,6 +30,10 @@ let win = null;
 let ws = null;
 
 function connect() {
+	if (!urlArg) {
+		safeLog("forge shell: no editor URL argument, capture bridge disabled");
+		return;
+	}
 	const url = new URL(urlArg);
 	const wsUrl = `${url.protocol === "https:" ? "wss:" : "ws:"}//${url.host}/ws?token=${encodeURIComponent(
 		url.searchParams.get("token") ?? "",
@@ -22,7 +41,12 @@ function connect() {
 	ws = new WebSocket(wsUrl);
 
 	ws.on("open", () => {
+		safeLog("forge shell: control bridge connected");
 		ws.send(JSON.stringify({ type: "hello" }));
+	});
+
+	ws.on("error", (err) => {
+		safeLog(`forge shell: control bridge error ${err}`);
 	});
 
 	ws.on("message", async (raw) => {
@@ -79,14 +103,14 @@ function createWindow() {
 	});
 	win.loadURL(urlArg);
 	win.webContents.on("did-fail-load", (_e, code, desc, url) => {
-		console.error(`forge shell: did-fail-load ${code} ${desc} ${url}`);
+		safeLog(`forge shell: did-fail-load ${code} ${desc} ${url}`);
 	});
 	win.webContents.on("did-finish-load", () => {
-		console.log(`forge shell: loaded ${urlArg}`);
+		safeLog(`forge shell: loaded ${urlArg}`);
 	});
 	win.webContents.on("console-message", (event) => {
 		if (event.level === "error" || event.level === "warning") {
-			console.log(`forge shell renderer[${event.level}]: ${event.message?.slice(0, 500) ?? ""}`);
+			safeLog(`forge shell renderer[${event.level}]: ${event.message?.slice(0, 500) ?? ""}`);
 		}
 	});
 	win.on("closed", () => {
@@ -99,4 +123,7 @@ app.on("window-all-closed", () => {
 	app.quit();
 });
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+	createWindow();
+	connect();
+});
