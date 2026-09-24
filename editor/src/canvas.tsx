@@ -61,6 +61,14 @@ function syncFrames(editor: Editor, mock: WorldMock) {
 	}
 	if (creations.length) editor.createShapes(creations);
 	if (updates.length) for (const u of updates) editor.updateShape(u);
+	// frame the pages like the design does (centered with breathing room)
+	if (creations.length || existing.length === 0) {
+		try {
+			editor.zoomToFit({ animation: { duration: 0 } });
+		} catch {
+			/* camera fitting is cosmetic */
+		}
+	}
 }
 
 const FrameSync = track(function FrameSync({ mock }: { mock: WorldMock }) {

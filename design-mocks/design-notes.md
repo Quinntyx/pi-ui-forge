@@ -1,5 +1,13 @@
 # Editor chrome — design contract (converged, FINAL r28)
 
+## Post-replication verification (r1/r2 rounds, rebuilt editor)
+After the chrome was replicated pixel-near in the real editor, the mock was
+reopened in the rebuilt editor (build ok) and pages a / a-work / a-interact
+were rebuilt and self-inspected against this contract, then handed over via
+mock_review. The review window was closed with zero markup — no annotations,
+no regressions reported. Renders: shots/r1/a.jpg (annotate), shots/r1/a-work.jpg
+(work), shots/r2/a-interact.jpg (interact).
+
 Status: converged and approved (twice — initial and resumed session, both
 closed with zero markup). This file is the hand-off contract; replicate from
 it and the renders below.

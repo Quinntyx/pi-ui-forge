@@ -2,7 +2,7 @@
    no status pill / identity / banner hint / version, icon-only send-back,
    approve in topbar corner, banner above prompt bar, popup comment editor,
    tldraw-exact vertical style panel, progress state, multiple state pages. */
-* { box-sizing: border-box; }.forge-root {
+* { box-sizing: border-box; margin: 0; }.forge-root {
 	--bg0: #242b31; --bg1: #2d353b; --bg2: #343f44; --bg3: #414c52;
 	--fg: #d3c6aa; --faint: #859289; --grey: #7a8478;
 	--red: #e67e80; --orange: #e69875; --yellow: #dbbc7f;
@@ -220,3 +220,14 @@
 .forge-canvas-crash span { font-size: 11px; opacity: 0.8; }
 .forge-canvas-crash button { padding: 6px 12px; border: 1px solid var(--bg3); border-radius: 3px; background: var(--bg2); color: inherit; cursor: pointer; }
 .forge-empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--faint); font-size: 12px; }
+
+/* ── tldraw canvas theming: our background + our grid, not tldraw's ── */
+.tl-grid { display: none; }
+.tl-background {
+	background-color: var(--bg0);
+	background-image:
+		linear-gradient(var(--grid) 1px, transparent 1px),
+		linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+	background-size: 24px 24px;
+}
+html, body, #root { height: 100%; overflow: hidden; }
