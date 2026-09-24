@@ -70,10 +70,24 @@ function nearestPage(editor: Editor, bounds: { x: number; y: number; w: number; 
 	return best?.page ?? null;
 }
 
-function shapeText(editor: Editor, shape: NonNullable<ReturnType<Editor["getShape"]>>): string | undefined {
+function richTextToPlain(value: unknown): string {
+	const out: string[] = [];
+	const walk = (node: unknown): void => {
+		if (!node || typeof node !== "object") return;
+		const record = node as { text?: unknown; content?: unknown };
+		if (typeof record.text === "string") out.push(record.text);
+		if (Array.isArray(record.content)) record.content.forEach(walk);
+	};
+	walk(value);
+	return out.join("");
+}
+
+function shapeText(shape: NonNullable<ReturnType<Editor["getShape"]>>): string | undefined {
 	try {
-		const text = editor.getText(shape);
-		return text && text.trim() !== "" ? text : undefined;
+		// 'text' and 'note' shapes both store their content in props.richText
+		const richText = (shape.props as { richText?: unknown }).richText;
+		const text = richTextToPlain(richText);
+		return text.trim() !== "" ? text : undefined;
 	} catch {
 		return undefined;
 	}
@@ -107,7 +121,7 @@ async function collectDrawings(canvasId: string): Promise<ForgeDrawing[]> {
 					image = null;
 				}
 			}
-			const text = shapeText(editor, shape);
+			const text = shapeText(shape);
 			const drawing: ForgeDrawing = {
 				canvasId,
 				page: nearestPage(editor, rect),

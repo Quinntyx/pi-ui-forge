@@ -312,6 +312,13 @@ function firstEditor(s: ForgeSession): WebSocket | null {
 	return null;
 }
 
+function shellClient(s: ForgeSession): WebSocket | null {
+	for (const [client, kind] of s.clients) {
+		if (kind === "shell" && client.readyState === WebSocket.OPEN) return client;
+	}
+	return null;
+}
+
 // --- session lifecycle -------------------------------------------------------------------
 
 async function ensureSession(ctx: ExtensionContext): Promise<ForgeSession> {
