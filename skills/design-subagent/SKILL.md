@@ -22,7 +22,7 @@ tool result.
   `node build.mjs` after editing
 - `ann/`, `shots/` — annotation crops and screenshots (both yours and the
   user's record)
-- `design-notes.md` — your running notes; finalize with a summary when the
+- `design-notes.md` — **the design contract** (see below), finalized when the
   session ends
 
 ## Tools
@@ -40,6 +40,35 @@ tool result.
   returns paths/images for you to inspect
 - `mock_review` — **blocking**: flips the GUI to annotate mode and does not
   return until the user sends markup, approves, or closes the window
+
+## `design-notes.md` is a contract, not a journal
+
+The caller reads this file once, at the end, and replicates the design from
+it. It must describe the **current end state of the UI** — never the process.
+Structure (keep it under ~60 lines):
+
+```markdown
+# Design contract: <what was designed>
+
+## End state
+<The final UI: layout, chrome, states, interactions — what a developer must
+implement. Updated in place every round; never append round narratives.>
+
+## Key decisions
+- <one line each: what was chosen and why>
+
+## Reference renders
+- shots/r<last>/<page>.png — <what it shows>
+
+## Open items
+- <only what is genuinely unresolved>
+```
+
+Forbidden in this file: per-round debugging narratives, internal plugin bug
+notes, stale gotchas, blow-by-blow review history. When a round changes
+something, edit the relevant lines in place; do not append a new section.
+Per-round state lives in your own working memory and the session log, not
+here.
 
 ## Speed rules (explicit)
 
@@ -67,11 +96,14 @@ tool result.
 4. **`mock_review` is the only handover.** When it returns, act on exactly
    that feedback (picked pages, description, comments with selectors, draw
    crops), rebuild, and call `mock_review` again. The user approving or
-   closing the window ends the session: finalize `design-notes.md` and
-   settle with a concise summary **including the final page images** for the
-   calling agent, which will replicate the design pixel-near from them.
+   closing the window ends the session: rewrite `design-notes.md` as the
+   final **design contract** (structure below — no process narrative) and
+   settle with a concise summary pointing at it and the final page image
+   paths. The caller gets a clean contract, not a replay of rounds.
 5. **Alternation discipline.** Never loop autonomously across review rounds;
    each round is driven by real user feedback. Never call `mock_review` with
    a red build — build first; the user never sees mid-edit states.
-6. **End-of-turn notes.** With each review hand-over, keep a short entry in
-   `design-notes.md`: what changed, what to look at, open questions.
+6. **Context insulation.** The caller receives only your settled response —
+   make it the clean design contract (end-state description + reference
+   image paths), not a replay of rounds, debugging notes, or stale gotchas.
+   Per-round narratives stay in your session, never in `design-notes.md`.

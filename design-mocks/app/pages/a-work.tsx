@@ -1,3 +1,4 @@
+import WikiMock from "../components/wiki";
 import "./a.css";
 
 /* state 2 — agent working: prompt bar replaced by a progress animation,
@@ -39,9 +40,9 @@ export default function AWork() {
 		<div className="app">
 			<header id="topbar">
 				<nav id="tabs">
-					<button className="tab"><span className="tab-idx">0</span>Option A</button>
-					<button className="tab tab-active"><span className="tab-idx">1</span>Checkout</button>
-					<button className="tab"><span className="tab-idx">2</span>home</button>
+					<button className="tab tab-active"><span className="tab-idx">0</span>wiki — light</button>
+					<button className="tab"><span className="tab-idx">1</span>wiki — dark</button>
+					<button className="tab"><span className="tab-idx">2</span>wiki — sepia</button>
 				</nav>
 				<div className="topbar-spring" />
 				<div id="mode-toggle" role="group" aria-label="mode">
@@ -111,58 +112,22 @@ export default function AWork() {
 						</div>
 					</div>
 
-					<div className="frame" style={{ width: 430 }}>
-						<div className="frame-label">checkout · r3 → r4</div>
-						<div className="frame-body">
-							<div className="mini-topbar">
-								<span className="mini-dot" /><span className="mini-dot" /><span className="mini-dot" />
-								<span className="mini-crumb">checkout</span>
-							</div>
-							<div className="mini-title">Checkout</div>
-							<div className="mini-row" id="price-row">
-								<span>Order total</span>
-								<span className="mini-price">$48.00</span>
-							</div>
-							<div className="mini-line" style={{ width: "72%" }} />
-							<div className="mini-line" style={{ width: "55%" }} />
-							<button className="mini-btn checkout-cta" id="checkout-cta">Complete order — $48.00</button>
-							<Pin p={pins[0]} pos="pin-pos-cta" />
-							<Pin p={pins[1]} pos="pin-pos-price" />
-						</div>
-					</div>
-
-					<div className="frame" style={{ width: 390 }}>
-						<div className="frame-label">home · r3 → r4</div>
-						<div className="frame-body">
-							<div className="mini-topbar">
-								<span className="mini-dot" /><span className="mini-dot" /><span className="mini-dot" />
-								<span className="mini-crumb">home</span>
-							</div>
-							<div className="hero-title">Build faster.</div>
-							<div className="mini-line" style={{ width: "80%" }} />
-							<div className="mini-line" style={{ width: "64%" }} />
-							<div className="mini-cards">
-								<div className="mini-card" /><div className="mini-card" /><div className="mini-card" />
-							</div>
-							<Pin p={pins[2]} pos="pin-pos-hero" />
-						</div>
-					</div>
+					<WikiMock review label="wiki — light · r3 → r4" />
 
 					{/* agent working: banner + progress animation replace the prompt bar */}
 					<div id="prompt-stack">
 						<div id="review-banner">
 							<span className="banner-round">R2</span>
 							<span className="banner-text">
-								Working on your markup — baseline the price row (<b>2</b>), flatten hero shadow (<b>3</b>).
+								Working on your markup — recropping the infobox image (<b>1</b>), rebalancing the TOC (<b>2</b>).
 							</span>
 						</div>
 						<div id="progress-bar">
 							<div className="progress-head">
 								<span className="progress-spinner" />
-								<span>revising checkout + home…</span>
+								<span>revising wiki — light…</span>
 							</div>
-							<div className="progress-track"><div className="progress-fill" /></div>
-							<div className="progress-meta">round 2 · 2 pages · started 12s ago · esc to interrupt</div>
+							<div className="progress-meta">round 2 · 1 page · started 12s ago · esc to interrupt</div>
 						</div>
 					</div>
 				</section>

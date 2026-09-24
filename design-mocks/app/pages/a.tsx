@@ -1,11 +1,5 @@
+import WikiMock from "../components/wiki";
 import "./a.css";
-
-/* dummy data — comment color == canvas pin color == badge accent */
-const pins = [
-	{ n: 1, color: "yellow", selector: ".checkout-cta", text: "Filled green; outline reads disabled." },
-	{ n: 2, color: "orange", selector: "#price-row", text: "Baseline the price with the title." },
-	{ n: 3, color: "purple", selector: ".hero-title", text: "Flatten the shadow to match frame 2." },
-];
 
 const tools = [
 	{ id: "select", active: true, title: "Select (V)", d: "M4.5 2.5v11l3-2.6 1.8 3.8 2.3-1.1-1.8-3.7h4l-9.3-7.4z" },
@@ -20,26 +14,23 @@ const tools = [
 	{ id: "frame", active: false, title: "Frame (F)", d: "M4 2v12M12 2v12M2 4h12M2 12h12" },
 ];
 
-function Pin({ p, pos }: { p: typeof pins[number]; pos: string }) {
-	return (
-		<span className={`pin-wrap ${pos} ${pos === "pin-pos-hero" ? "tip-right" : ""}`}>
-			<span className={`pin c-${p.color}`}>{p.n}</span>
-			<span className="pin-tip">
-				<code>{p.selector}</code>
-				<span>{p.text}</span>
-			</span>
-		</span>
-	);
-}
+/* tabs = different style mocks of the same layout (multiple themes), not phases */
+const tabs = [
+	{ name: "wiki — light", on: true },
+	{ name: "wiki — dark", on: false },
+	{ name: "wiki — sepia", on: false },
+];
 
 export default function A() {
 	return (
 		<div className="app">
 			<header id="topbar">
 				<nav id="tabs">
-					<button className="tab tab-active"><span className="tab-idx">0</span>Option A</button>
-					<button className="tab"><span className="tab-idx">1</span>Checkout</button>
-					<button className="tab"><span className="tab-idx">2</span>home</button>
+					{tabs.map((t, i) => (
+						<button key={t.name} className={`tab ${t.on ? "tab-active" : ""}`}>
+							<span className="tab-idx">{i}</span>{t.name}
+						</button>
+					))}
 				</nav>
 				<div className="topbar-spring" />
 				<div id="mode-toggle" role="group" aria-label="mode">
@@ -71,7 +62,6 @@ export default function A() {
 						))}
 					</div>
 
-					{/* tldraw style panel — narrow vertical strip */}
 					<div id="style-panel" aria-label="style">
 						<div className="sp-section" id="sp-fill">
 							<span className="sp-icon"><svg width="12" height="12" viewBox="0 0 16 16"><path d="M8 2C5.4 5.6 3.8 7.8 3.8 10a4.2 4.2 0 0 0 8.4 0C12.2 7.8 10.6 5.6 8 2z" fill="none" stroke="currentColor" strokeWidth="1.3" /></svg></span>
@@ -82,7 +72,7 @@ export default function A() {
 							</div>
 						</div>
 						<div className="sp-section" id="sp-dash">
-							<span className="sp-icon"><svg width="12" height="12" viewBox="0 0 16 16"><path d="M2 4h4M9 4h5M2 11h5M10 11h4" stroke="currentColor" strokeWidth="1.4" strokeDasharray="0" /></svg></span>
+							<span className="sp-icon"><svg width="12" height="12" viewBox="0 0 16 16"><path d="M2 4h4M9 4h5M2 11h5M10 11h4" stroke="currentColor" strokeWidth="1.4" /></svg></span>
 							<div className="sp-grid">
 								<button className="sp-cell" title="solid"><span style={{ width: 12, borderTop: "2px solid currentColor", display: "block" }} /></button>
 								<button className="sp-cell" title="dashed"><span style={{ width: 12, borderTop: "2px dashed currentColor", display: "block" }} /></button>
@@ -111,61 +101,14 @@ export default function A() {
 						</div>
 					</div>
 
-					<div className="frame" style={{ width: 430 }}>
-						<div className="frame-label">checkout · r3</div>
-						<div className="frame-body">
-							<div className="mini-topbar">
-								<span className="mini-dot" /><span className="mini-dot" /><span className="mini-dot" />
-								<span className="mini-crumb">checkout</span>
-							</div>
-							<div className="mini-title">Checkout</div>
-							<div className="mini-row" id="price-row">
-								<span>Order total</span>
-								<span className="mini-price">$48.00</span>
-							</div>
-							<div className="mini-line" style={{ width: "72%" }} />
-							<div className="mini-line" style={{ width: "55%" }} />
-							<button className="mini-btn checkout-cta" id="checkout-cta">Complete order — $48.00</button>
-							<Pin p={pins[0]} pos="pin-pos-cta" />
-							<Pin p={pins[1]} pos="pin-pos-price" />
-						</div>
-					</div>
-
-					<div className="frame" style={{ width: 390 }}>
-						<div className="frame-label">home · r3</div>
-						<div className="frame-body">
-							<div className="mini-topbar">
-								<span className="mini-dot" /><span className="mini-dot" /><span className="mini-dot" />
-								<span className="mini-crumb">home</span>
-							</div>
-							<div className="hero-title">Build faster.</div>
-							<div className="mini-line" style={{ width: "80%" }} />
-							<div className="mini-line" style={{ width: "64%" }} />
-							<div className="mini-cards">
-								<div className="mini-card pop-target" />
-								<div className="mini-card" /><div className="mini-card" />
-								{/* popup comment editor — appears under the cursor right after picking */}
-								<div id="comment-pop">
-									<svg className="pop-cursor" width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
-										<path d="M2.5 1.5v9.6l2.8-2.4 1.6 3.5 2-1-1.6-3.4h3.4z" fill="currentColor" stroke="#1f262b" strokeWidth="1" />
-									</svg>
-									<span className="pin c-blue">4</span>
-									<span className="pop-main">
-										<input className="pop-input" defaultValue="add hover states + 2px lift" aria-label="new comment" autoFocus />
-										<div className="pop-hint"><b>⏎</b> finalize comment · <b>esc</b> cancel</div>
-									</span>
-								</div>
-							</div>
-							<Pin p={pins[2]} pos="pin-pos-hero" />
-						</div>
-					</div>
+					<WikiMock review />
 
 					{/* floating stack: agent banner directly above the prompt bar */}
 					<div id="prompt-stack">
 						<div id="review-banner">
 							<span className="banner-round">R1</span>
 							<span className="banner-text">
-								CTA hierarchy + hero spacing reworked — check pin <b>1</b>, price baseline in <b>2</b>.
+								Light-theme pass done — check the infobox crop (<b>1</b>) and TOC spacing (<b>2</b>).
 							</span>
 						</div>
 						<div id="prompt-bar">
@@ -173,13 +116,13 @@ export default function A() {
 								<span className="prompt-caret">›</span>
 								<input
 									className="prompt-input"
-									defaultValue="CTA hierarchy + hero spacing reworked; CTA is the only filled element now."
+									defaultValue="Switched the mock to a light theme; infobox image now uses a 4:3 crop."
 									aria-label="describe the change"
 								/>
 								<button id="send-back" title="send back (⏎)" aria-label="send back">
 									<svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true">
-										<path d="M2.5 7.6L13.5 2.4l-3.8 11.2-2.5-4.7-4.7-1.3z" fill="currentColor" />
-										<path d="M13.5 2.4L7.2 8.9" stroke="#232a26" strokeWidth="1" />
+										<path d="M13 3.5v4.2a1.8 1.8 0 0 1-1.8 1.8H3.8" fill="none" stroke="currentColor" strokeWidth="1.6" />
+										<path d="M7 5.8L3.4 9.5 7 13.2" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
 									</svg>
 								</button>
 							</div>
@@ -190,7 +133,7 @@ export default function A() {
 
 			<footer id="statusline">
 				<span className="sl-seg sl-seg-accent">REVIEW</span>
-				<span className="sl-seg">round 1 · 2 pages picked · 3 comments</span>
+				<span className="sl-seg">round 1 · 1 page picked · 4 comments</span>
 				<span className="sl-spring" />
 				<span className="sl-seg sl-hint"><b>⏎</b> send back</span>
 				<span className="sl-seg sl-hint"><b>esc</b> cancel pick</span>

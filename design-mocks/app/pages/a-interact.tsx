@@ -1,3 +1,4 @@
+import WikiMock from "../components/wiki";
 import "./a.css";
 
 /* state 3 — interact mode: browse the mock; annotation chrome hidden */
@@ -7,9 +8,9 @@ export default function AInteract() {
 		<div className="app">
 			<header id="topbar">
 				<nav id="tabs">
-					<button className="tab"><span className="tab-idx">0</span>Option A</button>
-					<button className="tab"><span className="tab-idx">1</span>Checkout</button>
-					<button className="tab tab-active"><span className="tab-idx">2</span>home</button>
+					<button className="tab tab-active"><span className="tab-idx">0</span>wiki — light</button>
+					<button className="tab"><span className="tab-idx">1</span>wiki — dark</button>
+					<button className="tab"><span className="tab-idx">2</span>wiki — sepia</button>
 				</nav>
 				<div className="topbar-spring" />
 				<div id="mode-toggle" role="group" aria-label="mode">
