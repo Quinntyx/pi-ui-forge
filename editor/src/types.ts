@@ -47,7 +47,6 @@ export interface SendBackPayload {
 		text?: string;
 	}[];
 	canvasImage: string | null;
-	pageImages: { page: string; image: string }[];
 	approved: boolean;
 }
 

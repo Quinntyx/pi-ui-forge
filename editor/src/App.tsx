@@ -21,8 +21,6 @@ export default function App() {
 					setState({ phase: msg.phase, reviewId: msg.reviewId, reviewNote: msg.note });
 					break;
 				case "set-world":
-					// a rebuild invalidates markup: annotations are consumed feedback
-					clearAllAnnotations();
 					applyWorld(msg.world);
 					applyPageHashes(msg.hashes);
 					break;

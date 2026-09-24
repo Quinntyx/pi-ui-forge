@@ -28,6 +28,34 @@ const WebSocket = require("ws");
 
 let win = null;
 let ws = null;
+let offscreen = null;
+
+/** Hidden offscreen window rendering /app/<page>/ for page captures. */
+async function capturePageOffscreen(pageUrl, page) {
+	if (!offscreen || offscreen.isDestroyed()) {
+		offscreen = new BrowserWindow({
+			show: false,
+			width: 1280,
+			height: 800,
+			webPreferences: {
+				offscreen: true,
+				backgroundThrottling: false,
+				contextIsolation: true,
+			},
+		});
+		offscreen.on("closed", () => {
+			offscreen = null;
+		});
+	}
+	await offscreen.loadURL(pageUrl);
+	// settle: react mount + fonts + first paint
+	await new Promise((r) => setTimeout(r, 1200));
+	const image = await offscreen.webContents.capturePage();
+	const maxW = 1400;
+	const scaled = image.getSize().width > maxW ? image.resize({ width: maxW }) : image;
+	safeLog(`forge shell: page shot ${page} ${scaled.getSize().width}x${scaled.getSize().height}`);
+	return `data:image/jpeg;base64,${scaled.toJPEG(72).toString("base64")}`;
+}
 
 function connect() {
 	if (!urlArg) {
@@ -56,6 +84,37 @@ function connect() {
 		} catch {
 			return;
 		}
+		if (msg.type === "forge:page-shot") {
+			// offscreen render of /app/<page>/ — never touches the user's view
+			try {
+				const u = new URL(urlArg);
+				const pageUrl = `${u.protocol}//${u.host}/app/${encodeURIComponent(msg.page)}/?token=${encodeURIComponent(
+					u.searchParams.get("token") ?? "",
+				)}`;
+				const dataUrl = await capturePageOffscreen(pageUrl, msg.page);
+				ws.send(
+					JSON.stringify({
+						source: "forge-shell",
+						type: "forge:page-shot-result",
+						reqId: msg.reqId,
+						page: msg.page,
+						dataUrl,
+					}),
+				);
+			} catch (err) {
+				ws.send(
+					JSON.stringify({
+						source: "forge-shell",
+						type: "forge:page-shot-result",
+						reqId: msg.reqId,
+						page: msg.page,
+						dataUrl: null,
+						error: String(err),
+					}),
+				);
+			}
+		}
+
 		if (msg.type === "forge:capture" && win) {
 			try {
 				// Whole-canvas captures are returned inline to the agent's model, so

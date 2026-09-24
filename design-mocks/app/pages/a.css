@@ -177,7 +177,7 @@
 
 /* hover tooltip on the numbered badge: selector + text */
 .pin-tip {
-	position: absolute; bottom: calc(100% + 9px); left: 0; transform: none;
+	position: absolute; bottom: calc(100% + 9px); left: 50%; transform: translateX(-50%);
 	background: var(--bar); border: 1px solid var(--bg3); padding: 6px 9px;
 	font-size: 10.5px; line-height: 1.45; color: var(--faint);
 	white-space: nowrap; opacity: 0; pointer-events: none;
@@ -196,7 +196,7 @@
 /* ── popup comment editor — appears above the pick, styled like the tooltip ── */
 .pop-anchor { position: relative; width: fit-content; }
 #comment-pop {
-	position: absolute; bottom: calc(100% + 9px); left: 0; transform: none;
+	position: absolute; bottom: calc(100% + 9px); left: 50%; transform: translateX(-50%);
 	width: 250px; z-index: 45; text-align: left;
 	background: var(--bar); border: 1px solid var(--bg3);
 	box-shadow: 3px 3px 0 var(--shadow);

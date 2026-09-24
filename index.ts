@@ -64,7 +64,6 @@ interface ReviewPayload {
 	comments: { text: string; page: string | null; selector: string | null }[];
 	drawings: { page: string | null; image: string | null; text?: string }[];
 	canvasImage: string | null;
-	pageImages: { page: string; image: string }[];
 }
 
 interface ReviewResult {
@@ -286,6 +285,17 @@ function handleConnection(s: ForgeSession, ws: WebSocket, kind: "editor" | "shel
 			return;
 		}
 
+		if (msg.type === "forge:page-shot-result" && kind === "shell") {
+			const waiter = s.shotWaiters.get((msg as { reqId: string }).reqId);
+			if (waiter) {
+				s.shotWaiters.delete((msg as { reqId: string }).reqId);
+				const dataUrl = (msg as { dataUrl?: string }).dataUrl ?? null;
+				const page = (msg as { page?: string }).page ?? "unknown";
+				waiter(dataUrl ? [{ page, image: dataUrl }] : []);
+			}
+			return;
+		}
+
 		if (msg.type === "page-shot-result" && kind === "editor") {
 			const waiter = s.shotWaiters.get((msg as { reqId: string }).reqId);
 			if (waiter) {
@@ -430,30 +440,43 @@ function editorUrl(s: ForgeSession): string {
 }
 
 function emptyPayload(): ReviewPayload {
-	return { picked: [], description: "", comments: [], drawings: [], canvasImage: null, pageImages: [] };
+	return { picked: [], description: "", comments: [], drawings: [], canvasImage: null };
 }
 
 // --- capture helpers -------------------------------------------------------------------------
 
+/**
+ * Page screenshots come from the shell's OFFSCREEN renderer (hidden window
+ * loading /app/<page>/) — never from the live canvas: mock_build may add
+ * pages the user hasn't been shown yet, and captures must not touch the
+ * user's view. One request per page; results collected via shotWaiters.
+ */
 function sendPageShotRequest(
 	s: ForgeSession,
 	pages: string[] | null,
 	timeoutMs: number,
 ): Promise<{ page: string; image: string }[]> {
-	const editor = firstEditor(s);
-	if (!editor) return Promise.resolve([]);
-	return new Promise((resolve) => {
-		const reqId = crypto.randomBytes(6).toString("hex");
-		const timer = setTimeout(() => {
-			s.shotWaiters.delete(reqId);
-			resolve([]);
-		}, timeoutMs);
-		s.shotWaiters.set(reqId, (shots) => {
-			clearTimeout(timer);
-			resolve(shots);
-		});
-		editor.send(JSON.stringify({ type: "page-shot-request", reqId, pages }));
-	});
+	const shell = shellClient(s);
+	if (!shell) return Promise.resolve([]);
+	const pageNames = pages ?? s.world.mocks.flatMap((m) => m.pages);
+	const unique = [...new Set(pageNames)];
+	return Promise.all(
+		unique.map(
+			(page) =>
+				new Promise<{ page: string; image: string } | null>((resolve) => {
+					const reqId = crypto.randomBytes(6).toString("hex");
+					const timer = setTimeout(() => {
+						s.shotWaiters.delete(reqId);
+						resolve(null);
+					}, timeoutMs);
+					s.shotWaiters.set(reqId, (shots) => {
+						clearTimeout(timer);
+						resolve(shots[0] ?? null);
+					});
+					shell.send(JSON.stringify({ type: "forge:page-shot", reqId, page }));
+				}),
+		),
+	).then((results) => results.filter((x): x is { page: string; image: string } => x !== null));
 }
 
 function imageBlock(dataUrl: string): { type: "image"; data: string; mimeType: string } | null {
@@ -483,6 +506,7 @@ function saveReviewArtifacts(
 	cwd: string,
 	payload: ReviewPayload,
 	s: ForgeSession,
+	pageShots: { page: string; image: string }[],
 ): { images: { canvas: string | null; pages: Record<string, string> } } {
 	s.shotCounter += 1;
 	const dir = `shots/r${s.shotCounter}`;
@@ -491,7 +515,7 @@ function saveReviewArtifacts(
 		if (payload.canvasImage) {
 			images.canvas = saveImage(cwd, dir, "canvas", payload.canvasImage) ?? null;
 		}
-		for (const shot of payload.pageImages) {
+		for (const shot of pageShots) {
 			const file = saveImage(cwd, dir, shot.page, shot.image);
 			if (file) images.pages[shot.page] = file;
 		}
@@ -594,12 +618,13 @@ export default function (pi: ExtensionAPI) {
 			const s = await ensureSession(ctx);
 			s.world = world;
 			s.pageHashes = { ...s.pageHashes, ...hashes };
-			if (firstEditor(s)) broadcastEditors(s, { type: "set-world", world, hashes: s.pageHashes });
+			// NOTE: no GUI push here — the agent calls mock_build freely mid-turn
+			// for self-inspection; the user's canvas only changes at mock_review.
 			return {
 				content: [
 					{
 						type: "text",
-						text: `Built ${manifest.pages.length} page(s): ${manifest.pages.map((p) => p.name).join(", ")}. Displayed: ${params.mocks
+						text: `Built ${manifest.pages.length} page(s): ${manifest.pages.map((p) => p.name).join(", ")}. Displayed at next review: ${params.mocks
 							.map((m) => `${m.label} → [${m.pages.join(", ")}]`)
 							.join(" | ")}`,
 					},
@@ -613,17 +638,17 @@ export default function (pi: ExtensionAPI) {
 		name: "mock_screenshot",
 		label: "Screenshot mock",
 		description:
-			"Capture the current mock pages as images without changing the user's view. Files land under shots/ and inline images are returned, for self-inspection before a review. Call this whenever you want to see how your work looks mid-stage.",
+			"Capture mock pages as JPEG files under shots/ without changing the user's view (offscreen render — works for pages not yet on the canvas). Returns file PATHS; read them with your read tool as needed for self-inspection.",
 		parameters: Type.Object({
-			pages: Type.Optional(Type.Array(Type.String(), { description: "Page names; default: all displayed pages" })),
+			pages: Type.Optional(Type.Array(Type.String(), { description: "Page names; default: all pages in the last mock_build" })),
 		}),
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
 			const s = await ensureSession(ctx);
-			if (s.closed || !firstEditor(s)) {
+			if (s.closed || !shellClient(s)) {
 				throw new Error("no editor window connected — call mock_open first");
 			}
-			const shots = await sendPageShotRequest(s, params.pages ?? null, 20000);
+			const shots = await sendPageShotRequest(s, params.pages ?? null, 30000);
 			if (!shots.length) {
 				throw new Error("no screenshots captured (pages may have failed to load)");
 			}
@@ -667,6 +692,13 @@ export default function (pi: ExtensionAPI) {
 			s.reviewId += 1;
 			s.phase = "review";
 			s.reviewNote = params.note ?? null;
+			// the single GUI update point: pages built since the last review appear
+			// on the canvas now, together with the hand-over
+			broadcastEditors(s, {
+				type: "set-world",
+				world: s.world,
+				hashes: s.pageHashes,
+			});
 			broadcastEditors(s, { type: "review-start", reviewId: s.reviewId, note: s.reviewNote });
 
 			const result = await new Promise<ReviewResult>((resolve) => {
@@ -681,7 +713,13 @@ export default function (pi: ExtensionAPI) {
 			});
 			s.phase = "idle";
 
-			const saved = saveReviewArtifacts(s.cwd, result.payload, s);
+			// page renders via the shell's offscreen window (picked pages, or all
+			// displayed pages when the user picked none)
+			const picked = result.payload.picked.length
+				? result.payload.picked
+				: s.world.mocks.flatMap((m) => m.pages);
+			const pageShots = result.closed ? [] : await sendPageShotRequest(s, picked, 30000);
+			const saved = saveReviewArtifacts(s.cwd, result.payload, s, pageShots);
 			const summary = {
 				approved: result.approved,
 				closed: result.closed,

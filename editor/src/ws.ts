@@ -79,15 +79,6 @@ export function connect(): void {
 			p.resolve(msg);
 			return;
 		}
-		if (msg.type === "page-shot-request") {
-			import("./capture").then(({ capturePages }) =>
-				capturePages(msg.pages).then(
-					(shots) => send({ type: "page-shot-result", reqId: msg.reqId, shots }),
-					() => send({ type: "page-shot-result", reqId: msg.reqId, shots: [] }),
-				),
-			);
-			return;
-		}
 		for (const h of handlers) h(msg);
 	};
 

@@ -427,8 +427,8 @@
 .pin-tip {
   position: absolute;
   bottom: calc(100% + 9px);
-  left: 0;
-  transform: none;
+  left: 50%;
+  transform: translateX(-50%);
   background: var(--bar);
   border: 1px solid var(--bg3);
   padding: 6px 9px;
@@ -478,8 +478,8 @@
 #comment-pop {
   position: absolute;
   bottom: calc(100% + 9px);
-  left: 0;
-  transform: none;
+  left: 50%;
+  transform: translateX(-50%);
   width: 250px;
   z-index: 45;
   text-align: left;

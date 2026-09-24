@@ -12,7 +12,7 @@
 // send-back button resolving fast matters more than a perfect crop; a failed
 // capture ships as null rather than blocking the round-trip.
 
-import { captureCanvas, capturePages } from "./capture";
+import { captureCanvas } from "./capture";
 import { editors } from "./canvas";
 import type { Editor } from "tldraw";
 import { isForgeShape } from "./shapes";
@@ -147,8 +147,6 @@ export async function buildSendBack(reviewId: number, approved: boolean): Promis
 	const drawingGroups = await Promise.all(state.world.mocks.map((m) => collectDrawings(m.id)));
 	const drawings = drawingGroups.flat();
 
-	// one capture pass: pages (paths only) + the single inline canvas image
-	const pageImages = await capturePages(state.picked.length ? state.picked : null);
 	const canvasImage = await captureCanvas();
 
 	return {
@@ -162,12 +160,6 @@ export async function buildSendBack(reviewId: number, approved: boolean): Promis
 			text: d.text,
 		})),
 		canvasImage,
-		pageImages,
 		approved,
 	};
-}
-
-/** Capture clean page renders (used by the server's screenshot requests). */
-export async function requestPageShots(pages: string[] | null) {
-	return capturePages(pages);
 }

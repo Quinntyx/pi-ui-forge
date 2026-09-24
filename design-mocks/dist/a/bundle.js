@@ -14898,7 +14898,7 @@ function Chrome({ design, state }) {
   const mockVariant = annotate ? "annotate" : state === "work" ? "work" : "plain";
   const dname = designs.find((d) => d.id === design)?.name ?? design;
   const label = state === "work" ? `${dname} \xB7 r3 \u2192 r4` : `${dname} \xB7 r3`;
-  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: `app ${light ? "light" : ""}`, children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: `app ${light ? "light" : ""}`, "data-build": "r23", children: [
     /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("header", { id: "topbar", children: [
       /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("nav", { id: "tabs", children: designs.map((d, i) => /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("button", { className: `tab ${d.id === design ? "tab-active" : ""}`, children: [
         /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "tab-idx", children: i }),
