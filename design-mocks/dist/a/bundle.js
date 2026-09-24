@@ -14899,7 +14899,7 @@ function Chrome({ design, state }) {
   const mockVariant = annotate ? "annotate" : state === "work" ? "work" : "plain";
   const dname = designs.find((d) => d.id === design)?.name ?? design;
   const label = state === "work" ? `${dname} \xB7 r3 \u2192 r4` : `${dname} \xB7 r3`;
-  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: `app ${light ? "light" : ""}`, "data-build": "r50", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: `app ${light ? "light" : ""}`, "data-build": "r51", children: [
     /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("header", { id: "topbar", children: [
       /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { id: "mode-toggle", role: "group", "aria-label": "mode", children: interact ? /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
         /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mode-key mode-key-modeI-active", children: "I" }),

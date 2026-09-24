@@ -755,53 +755,63 @@ export default function (pi: ExtensionAPI) {
 		},
 	});
 
-	// --- image budget → auto-compaction ----------------------------------------
+	// --- provider request-size errors → targeted compaction --------------------
 	//
 	// Design rounds accumulate image blocks in the conversation (review canvas
 	// shots, screenshot reads, pasted screenshots). Providers cap request size
-	// (~5-8 MiB) and reject with 413/400 long before token-based compaction
-	// would trigger. Track image bytes flowing through tool results and user
-	// messages; past the threshold, trigger ctx.compact() — old images are
-	// evicted into the summary, accepting the one-off cache invalidation.
-	const budgetState = { bytes: 0, compacting: false };
-	const budgetThreshold = (() => {
-		const mb = Number(process.env.PI_UI_FORGE_IMAGE_BUDGET_MB ?? "3.5");
-		return Number.isFinite(mb) && mb > 0 ? mb * 1024 * 1024 : 3.5 * 1024 * 1024;
-	})();
+	// (~5-8 MiB) and reject with 413 "Request body exceeds..." or a bodyless
+	// 400. Instead of guessing a size threshold (which invalidates the prompt
+	// cache too often), let the provider be the trigger: on an agent run that
+	// fails with a request-size error, propose a compaction evicting the oldest
+	// context (where the images live) and continue for exactly one retry.
+	// Escalation: 50% → 25% → full cut; give up after three so genuine 400s
+	// surface to the model instead of looping.
+	const recovery = { attempts: 0, lastAt: 0 };
+	const KEEP_FRACTIONS = [0.5, 0.25, 0] as const;
+	const REQUEST_SIZE_ERROR = /status code 4(?:00|13)|request body exceeds/i;
 
-	const countImages = (content: unknown): number => {
-		let bytes = 0;
-		for (const block of Array.isArray(content) ? content : []) {
-			if (block && (block as { type?: string }).type === "image") {
-				bytes += String((block as { data?: string }).data ?? "").length;
-			}
+	pi.on("agent_before_settle", (event) => {
+		if (event.outcome === "completed") {
+			recovery.attempts = 0;
+			return;
 		}
-		return bytes;
-	};
+		if (event.outcome !== "error") return;
 
-	const maybeCompact = (ctx: { compact: () => void }): void => {
-		if (budgetState.bytes <= budgetThreshold || budgetState.compacting) return;
-		budgetState.compacting = true;
-		budgetState.bytes = 0;
+		const messages = event.context.contextMessages;
+		const lastError = messages
+			.slice()
+			.reverse()
+			.find((m) => (m as { stopReason?: string }).stopReason === "error") as
+			| { errorMessage?: string }
+			| undefined;
+		if (!lastError?.errorMessage || !REQUEST_SIZE_ERROR.test(lastError.errorMessage)) return;
+
+		const now = Date.now();
+		if (now - recovery.lastAt > 120_000) recovery.attempts = 0;
+		recovery.lastAt = now;
+		if (recovery.attempts >= KEEP_FRACTIONS.length) return; // genuine failure — let it settle
+
+		const keepFraction = KEEP_FRACTIONS[recovery.attempts];
+		recovery.attempts += 1;
+		const entries = event.context.contextEntries;
+		const keepCount = Math.floor(entries.length * keepFraction);
+		const firstKeptEntryId =
+			keepCount > 0 ? entries[Math.max(0, entries.length - keepCount)].sourceEntry.id : null;
+
 		console.error(
-			`[ui-forge] image budget exceeded (~${(budgetThreshold / 1024 / 1024).toFixed(1)} MB of images in context) — triggering compaction to evict old images`,
+			`[ui-forge] ${lastError.errorMessage.trim()} — evicting oldest context (keeping ${keepCount}/${entries.length} entries) and retrying once`,
 		);
-		// compact() is fire-and-forget; re-arm after it has had time to finish
-		setTimeout(() => {
-			budgetState.compacting = false;
-		}, 120_000);
-		ctx.compact();
-	};
-
-	pi.on("tool_result", (event, ctx) => {
-		budgetState.bytes += countImages(event.content);
-		maybeCompact(ctx);
-	});
-
-	pi.on("message_end", (event, ctx) => {
-		const content = (event as { message?: { content?: unknown } }).message?.content;
-		budgetState.bytes += countImages(content);
-		maybeCompact(ctx);
+		return {
+			entries: [
+				{
+					type: "compaction" as const,
+					summary:
+						"[Older conversation evicted to fit the provider request-size limit. The authoritative design state lives in design-notes.md (the contract) and app/ in the mock folder; reference renders are under shots/. Recent context is retained below.]",
+					firstKeptEntryId,
+				},
+			],
+			continue: true,
+		};
 	});
 
 	pi.on("session_shutdown", async () => {

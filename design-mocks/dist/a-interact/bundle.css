@@ -107,7 +107,7 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 0 10px;
+  padding: 0 7px 0 10px;
   background: var(--bar);
   border-bottom: 1px solid var(--line);
 }

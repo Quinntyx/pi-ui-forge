@@ -30,8 +30,10 @@ theme (Everforest dark-medium, JetBrains Mono) around a tldraw-style canvas.
   active one), NOT pills. Only on turns proposing multiple mocks; enter
   commits the selected one and the rest are hidden (code lingers for
   porting elements).
-- Topbar layout: interact/annotate mode toggle on the LEFT; theme toggle +
-  approve on the right.
+- Topbar layout (APPROVED r52): interact/annotate mode toggle on the LEFT;
+  theme toggle + approve on the right in a `.topbar-right` group with 7px
+  gap; bar padding 0 7px 0 10px so approve sits 7px from the right edge —
+  x/y spacing balanced (7px vertical breathing room in the 36px bar).
 - Themes: everforest light-medium (DEFAULT on state pages) + dark-medium via
   working sun/moon `#theme-toggle` left of the mode toggle (one useState —
   the only interactive state in the mock). All chrome colors are CSS vars
@@ -76,6 +78,29 @@ theme (Everforest dark-medium, JetBrains Mono) around a tldraw-style canvas.
   `#topbar-approve`, `#tool-dock`, `#style-panel`, `#prompt-stack`,
   `#review-banner`, `#prompt-bar`, `#send-back`, `#progress-bar`,
   `#statusline`, `#comment-pop`, `.pop-target`.
+
+## APPROVED — final summary (round 14 / build r51)
+
+Editor chrome, everforest light-medium default + working theme toggle.
+
+- Topbar: mode toggle (interact/annotate, key badges) LEFT; `.topbar-right`
+  (theme sun/moon + approve, 7px gap) RIGHT; bar padding 0 7px 0 10px.
+  NO tabs — design proposals are a squared tab-strip (`#design-options`,
+  flush to the prompt-bar's left edge, green bottom-inset on active) above
+  the prompt input, with a "⏎ continue with <name>" hint, only on proposal
+  turns; enter commits the pick, others hidden.
+- Left rail: pick-element floats in its own `#pick-panel` (single border
+  shell, 30px icon-only button, 17px icon) above `#tool-dock`; both render
+  in annotate/work/interact; both disabled (real `disabled`) while working.
+- Comment popup: centered above the corner-pinned number badge, shows the
+  `.wiki-toc` selector line like pin hover tooltips.
+- Two-up canvas: dashed-blue selected main frame + dimmed 0.45-scale ghost
+  of the next design to its left.
+- Statusline: REVIEW/WORKING/INTERACT console chrome; send-back glyph
+  nudged 1px down.
+
+Final page images: shots/r52/a.jpg, shots/r52/a-work.jpg,
+shots/r52/a-interact.jpg (canvas: shots/r52/canvas.jpg).
 
 ## Pipeline gotchas (current)
 - mock_build only builds; the GUI updates on mock_review. mock_screenshot
