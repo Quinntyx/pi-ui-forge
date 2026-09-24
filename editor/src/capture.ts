@@ -98,9 +98,15 @@ export async function captureCanvas(timeoutMs = 6000): Promise<string | null> {
 	const reqId = newId("cap");
 	const response = await request(
 		{ type: "capture-request", reqId },
-		(m) => m.type === "shell-capture-result" && m.reqId === reqId,
+		(m) =>
+			(m.type === "shell-capture-result" || m.type === "forge:capture-result") && m.reqId === reqId,
 		timeoutMs,
 	);
-	if (response && response.type === "shell-capture-result") return response.dataUrl;
+	if (
+		response &&
+		(response.type === "shell-capture-result" || response.type === "forge:capture-result")
+	) {
+		return response.dataUrl;
+	}
 	return null;
 }
