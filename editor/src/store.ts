@@ -1,6 +1,6 @@
 // Tiny external store (useSyncExternalStore) for editor UI state.
 
-import type { ForgeComment, Phase, World } from "./types";
+import type { AgentActivity, ForgeComment, Phase, World } from "./types";
 
 export interface PopupState {
 	commentId: string;
@@ -25,8 +25,8 @@ export interface AppState {
 	comments: ForgeComment[];
 	/** popup comment editor anchored at a picked element */
 	popup: PopupState | null;
-	/** live agent activity label (e.g. "writing app/pages/home.tsx") */
-	activity: string | null;
+	/** live agent activity from pi-tool-tree (label, phase, running calls) */
+	activity: AgentActivity | null;
 	theme: "light" | "dark";
 }
 

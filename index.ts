@@ -836,9 +836,47 @@ export default function (pi: ExtensionAPI) {
 
 	// --- live agent activity → editor progress -------------------------------
 	//
-	// The editor's working screen shows what the agent is doing. Every tool
-	// call (the design agent's own tools included) is summarized into a short
-	// label and pushed to connected editors.
+	// Preferred source: pi-tool-tree's activity API (the model-declared label,
+	// running calls, phase). The tool_call summarizer below is only a fallback
+	// for sessions without pi-tool-tree.
+	interface ToolTreeActivity {
+		label: string | null;
+		phase: string;
+		isWorking: boolean;
+		calls: string[];
+		elapsedMs: number;
+	}
+	interface ToolTreeApi {
+		getActivity?: () => Record<string, unknown>;
+		subscribe?: (fn: (activity: Record<string, unknown>, change: unknown) => void) => () => void;
+	}
+	const toolTree = (): ToolTreeApi | undefined =>
+		(globalThis as unknown as Record<symbol, ToolTreeApi | undefined>)[Symbol.for("pi-tool-tree:api")];
+
+	let usingToolTree = false;
+	const subscribeToolTree = (): boolean => {
+		const api = toolTree();
+		if (!api?.subscribe) return false;
+		api.subscribe((activity) => {
+			usingToolTree = true;
+			if (!session || session.closed) return;
+			const calls = Array.isArray(activity.calls)
+				? (activity.calls as { toolName?: string }[]).map((c) => c.toolName ?? "tool")
+				: [];
+			const run = (activity.run ?? {}) as { elapsedMs?: number };
+			const payload: ToolTreeActivity = {
+				label: (activity.label as string | null) ?? null,
+				phase: (activity.phase as string) ?? "working",
+				isWorking: activity.isWorking !== false,
+				calls,
+				elapsedMs: run.elapsedMs ?? 0,
+			};
+			broadcastEditors(session, { type: "activity", activity: payload });
+		});
+		return true;
+	};
+	subscribeToolTree();
+
 	const activityLabel = (toolName: string, input: Record<string, unknown> | undefined): string => {
 		const arg = input ?? {};
 		const short = (v: unknown, n = 44) => (typeof v === "string" ? v.replace(/^.*[\\/]/, "").slice(0, n) : "");
@@ -864,16 +902,17 @@ export default function (pi: ExtensionAPI) {
 		}
 	};
 	pi.on("tool_call", (event) => {
-		if (session && !session.closed) {
+		if (!usingToolTree && !subscribeToolTree() && session && !session.closed) {
 			broadcastEditors(session, {
 				type: "activity",
-				label: activityLabel(event.toolName, event.input as Record<string, unknown> | undefined),
+				activity: {
+					label: activityLabel(event.toolName, event.input as Record<string, unknown> | undefined),
+					phase: "tool",
+					isWorking: true,
+					calls: [event.toolName],
+					elapsedMs: 0,
+				},
 			});
-		}
-	});
-	pi.on("turn_start", () => {
-		if (session && !session.closed) {
-			broadcastEditors(session, { type: "activity", label: "thinking" });
 		}
 	});
 

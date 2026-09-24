@@ -42,7 +42,7 @@ export default function App() {
 					if (getState().mode === "interact") setState({ mode: "annotate" });
 					break;
 				case "activity":
-					setState({ activity: msg.label ?? null });
+					setState({ activity: msg.activity ?? null });
 					break;
 				case "review-end":
 					setState({ phase: "idle" });

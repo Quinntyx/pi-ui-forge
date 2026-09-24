@@ -60,7 +60,7 @@ export type HostToEditor =
 	| { type: "session-closed" }
 	| { type: "page-shot-request"; reqId: string; pages: string[] | null }
 	| { type: "pick"; on: boolean }
-	| { type: "activity"; label: string | null }
+	| { type: "activity"; activity: AgentActivity | null }
 	| { type: "shell-capture-result" | "forge:capture-result"; reqId: string; dataUrl: string | null }
 	| { type: "page-shot-result"; reqId: string; shots: { page: string; image: string }[] };
 
@@ -71,3 +71,12 @@ export type EditorToHost =
 	| { type: "page-shot-result"; reqId: string; shots: { page: string; image: string }[] };
 
 export type Phase = "idle" | "review" | "closed";
+
+/** Live agent activity (pi-tool-tree), shown on the working screen. */
+export interface AgentActivity {
+	label: string | null;
+	phase: string;
+	isWorking: boolean;
+	calls: string[];
+	elapsedMs: number;
+}

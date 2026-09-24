@@ -316,25 +316,35 @@ export function PromptStack({
 
 export function ProgressBar() {
 	const state = useSyncState();
+	const [, tick] = useState(0);
+	// re-render once a second so the elapsed time ticks while the agent works
+	useEffect(() => {
+		const t = setInterval(() => tick((n) => n + 1), 1000);
+		return () => clearInterval(t);
+	}, []);
 	const label = state.world.mocks.find((m) => m.id === state.activeCanvas)?.label;
 	const hasWorld = state.world.mocks.length > 0;
+	const act = state.activity;
+	const calls = act?.calls?.filter((c) => c && c !== "mock_open") ?? [];
+	const main = act
+		? calls.length
+			? `${act.label ?? act.phase} — ${calls.join(", ")}`
+			: (act.label ?? act.phase)
+		: hasWorld
+			? `revising ${label} — ${state.description || "applying the last review"}`
+			: "the design agent is starting";
+	const elapsed = act?.elapsedMs ? ` · ${Math.round(act.elapsedMs / 1000)}s` : "";
 	return (
 		<div id="prompt-stack">
 			<div id="progress-bar">
 				<div className="progress-head">
 					<span className="progress-spinner" />
-					<span>
-						{state.activity
-							? `working — ${state.activity}`
-							: hasWorld
-								? `revising ${label} — ${state.description || "applying the last review"}`
-								: "the design agent is starting"}
-					</span>
+					<span>{main}</span>
 				</div>
 				<div className="progress-meta">
 					{hasWorld
-						? `round ${Math.max(1, state.reviewId)} · esc to interrupt`
-						: "no pages yet · pages appear when the agent hands the mock over · esc to interrupt"}
+						? `round ${Math.max(1, state.reviewId)}${elapsed} · esc to interrupt`
+						: `no pages yet${elapsed} · pages appear when the agent hands the mock over · esc to interrupt`}
 				</div>
 			</div>
 		</div>
