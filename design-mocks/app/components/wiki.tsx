@@ -18,8 +18,10 @@ function Pin({ p }: { p: typeof pins[number] }) {
 	);
 }
 
-/* Realistic light-theme article mock. review = show pins + popup editor demo. */
-export default function WikiMock({ review = false, label = "wiki — light · r3" }: { review?: boolean; label?: string }) {
+export default function WikiMock({ variant = "plain", label }: {
+	variant?: "annotate" | "work" | "plain"; label?: string;
+}) {
+	const review = variant !== "plain";
 	return (
 		<div className="frame wiki-frame" style={{ width: 760 }}>
 			<div className="frame-label">{label}</div>
@@ -37,11 +39,22 @@ export default function WikiMock({ review = false, label = "wiki — light · r3
 				</p>
 				<div className="wiki-layout">
 					<div className="wiki-main">
-						<div className={`wiki-toc ${review ? "pop-target" : ""}`}>
-							<div className="wiki-toc-title">Contents</div>
-							<div><span className="toc-n">1</span><a>Description</a></div>
-							<div><span className="toc-n">2</span><a>Behaviour</a></div>
-							<div><span className="toc-n">3</span><a>Taxonomy</a></div>
+						<div className="pop-anchor">
+							<div className={`wiki-toc ${variant === "annotate" ? "pop-target" : ""}`}>
+								<div className="wiki-toc-title">Contents</div>
+								<div><span className="toc-n">1</span><a>Description</a></div>
+								<div><span className="toc-n">2</span><a>Behaviour</a></div>
+								<div><span className="toc-n">3</span><a>Taxonomy</a></div>
+							</div>
+							{variant === "annotate" && (
+								<div id="comment-pop">
+									<span className="pin c-blue">4</span>
+									<span className="pop-main">
+										<input className="pop-input" defaultValue="TOC rows misaligned by 2px" aria-label="new comment" autoFocus />
+										<div className="pop-hint"><b>⏎</b> finalize comment · <b>esc</b> cancel</div>
+									</span>
+								</div>
+							)}
 						</div>
 						<h2 className="wiki-h2">Description</h2>
 						<p className="wiki-text">
@@ -66,19 +79,6 @@ export default function WikiMock({ review = false, label = "wiki — light · r3
 				<div className="wiki-catbar">Categories: <a>Graulidae</a> | <a>Birds of the Selkirk Islands</a> | <a>Endemic fauna</a></div>
 
 				{review && pins.map((p) => <Pin key={p.n} p={p} />)}
-
-				{review && (
-					<div id="comment-pop" style={{ left: 26, top: 316, margin: 0 }}>
-						<svg className="pop-cursor" width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
-							<path d="M2.5 1.5v9.6l2.8-2.4 1.6 3.5 2-1-1.6-3.4h3.4z" fill="currentColor" stroke="#1f262b" strokeWidth="1" />
-						</svg>
-						<span className="pin c-blue">4</span>
-						<span className="pop-main">
-							<input className="pop-input" defaultValue="TOC rows misaligned by 2px" aria-label="new comment" autoFocus />
-							<div className="pop-hint"><b>⏎</b> finalize comment · <b>esc</b> cancel</div>
-						</span>
-					</div>
-				)}
 			</div>
 		</div>
 	);

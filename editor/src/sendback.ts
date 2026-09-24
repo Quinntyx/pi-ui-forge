@@ -1,7 +1,14 @@
 // Assembling the send-back payload: comments, drawings (viewport crops around
-// tldraw shapes), whole-canvas image, per-page images.
+// tldraw shapes), the whole-canvas image (the ONLY inline image — the model
+// uses it to see what pages carry markup), and per-page images saved to disk
+// with paths in the payload (the model reads them when it wants detail).
 //
-// Performance contract: everything runs in parallel with short timeouts — the
+// Image budget contract:
+//   - exactly one capture per page + one whole-canvas capture per round
+//   - everything downscaled to ≤1400px and JPEG-encoded by capture.ts
+//   - the canvas image is inline; page renders and draw crops are paths only
+//
+// Performance contract: captures run in parallel with short timeouts — the
 // send-back button resolving fast matters more than a perfect crop; a failed
 // capture ships as null rather than blocking the round-trip.
 
@@ -18,9 +25,9 @@ async function cropAroundBounds(
 	pageToScreen: (p: { x: number; y: number }) => { x: number; y: number },
 ): Promise<string | null> {
 	const img = new Image();
-	await new Promise<void>((resolve, reject) => {
+	await new Promise<void>((resolve) => {
 		img.onload = () => resolve();
-		img.onerror = () => reject(new Error("capture decode failed"));
+		img.onerror = () => resolve();
 		img.src = capture;
 	});
 	const pad = 24;
@@ -38,7 +45,8 @@ async function cropAroundBounds(
 	const ctx = canvas.getContext("2d");
 	if (!ctx) return null;
 	ctx.drawImage(img, sx, sy, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
-	return canvas.toDataURL("image/png");
+	// crops are small; still JPEG to keep them cheap
+	return canvas.toDataURL("image/jpeg", 0.72);
 }
 
 function intersectArea(
@@ -97,10 +105,6 @@ async function collectDrawings(canvasId: string): Promise<ForgeDrawing[]> {
 	const editor = editors.get(canvasId);
 	if (!editor) return [];
 	const capture = await captureCanvas();
-	const pageToScreen = (p: { x: number; y: number }) => {
-		const s = editor.pageToScreen(p);
-		return { x: s.x, y: s.y };
-	};
 	const shapes = [...editor.getCurrentPageShapeIds()]
 		.map((id) => editor.getShape(id))
 		.filter((s): s is NonNullable<typeof s> => !!s && !isForgeShape(s));
@@ -143,10 +147,9 @@ export async function buildSendBack(reviewId: number, approved: boolean): Promis
 	const drawingGroups = await Promise.all(state.world.mocks.map((m) => collectDrawings(m.id)));
 	const drawings = drawingGroups.flat();
 
-	const [pageImages, canvasImage] = await Promise.all([
-		capturePages(state.picked.length ? state.picked : null),
-		captureCanvas(),
-	]);
+	// one capture pass: pages (paths only) + the single inline canvas image
+	const pageImages = await capturePages(state.picked.length ? state.picked : null);
+	const canvasImage = await captureCanvas();
 
 	return {
 		reviewId,

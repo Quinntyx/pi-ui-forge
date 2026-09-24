@@ -1,12 +1,42 @@
 // Capture machinery: per-page PNG via same-origin iframe DOM serialization,
 // full-canvas PNG via the Electron shell's webContents.capturePage (relayed
 // through the server).
+//
+// Budget rule: every capture that could reach the agent's context is
+// downscaled to ≤1400px wide and re-encoded as JPEG (~100 KB), because tool
+// results persist in the conversation and providers cap request size.
 
 import { newId } from "./store";
 import { request } from "./ws";
 
 function iframeToken(): string {
 	return new URLSearchParams(location.search).get("token") ?? "";
+}
+
+const MAX_WIDTH = 1400;
+const JPEG_QUALITY = 0.72;
+
+/** Re-encode a dataURL image to ≤MAX_WIDTH-wide JPEG. */
+function downscaleToJpeg(dataUrl: string): Promise<string | null> {
+	return new Promise((resolve) => {
+		const img = new Image();
+		img.onload = () => {
+			try {
+				const scale = Math.min(1, MAX_WIDTH / img.naturalWidth);
+				const canvas = document.createElement("canvas");
+				canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+				canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+				const ctx = canvas.getContext("2d");
+				if (!ctx) return resolve(dataUrl);
+				ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+				resolve(canvas.toDataURL("image/jpeg", JPEG_QUALITY));
+			} catch {
+				resolve(dataUrl);
+			}
+		};
+		img.onerror = () => resolve(dataUrl);
+		img.src = dataUrl;
+	});
 }
 
 // Find live iframe windows, deduped by page name.
@@ -48,13 +78,17 @@ function requestIframeShot(win: Window, timeoutMs = 12000): Promise<string | nul
 	});
 }
 
-/** Capture full-page renders of the given pages (all when null) — parallel. */
+/** Capture full-page renders of the given pages (all when null) — parallel, JPEG-compressed. */
 export async function capturePages(
 	pages: string[] | null,
 ): Promise<{ page: string; image: string }[]> {
 	const frames = findIframes(pages);
 	const shots = await Promise.all(
-		[...frames.entries()].map(async ([page, win]) => ({ page, image: await requestIframeShot(win) })),
+		[...frames.entries()].map(async ([page, win]) => {
+			const raw = await requestIframeShot(win);
+			if (!raw) return { page, image: null };
+			return { page, image: await downscaleToJpeg(raw) };
+		}),
 	);
 	return shots.filter((s): s is { page: string; image: string } => !!s.image);
 }

@@ -58,13 +58,18 @@ function connect() {
 		}
 		if (msg.type === "forge:capture" && win) {
 			try {
-				const image = await win.webContents.capturePage();
+				// Whole-canvas captures are returned inline to the agent's model, so
+				// they are downscaled + JPEG to keep context small.
+				const raw = await win.webContents.capturePage();
+				const maxW = 1400;
+				const scaled = raw.getSize().width > maxW ? raw.resize({ width: maxW }) : raw;
+				safeLog(`forge shell: captured ${scaled.getSize().width}x${scaled.getSize().height} jpeg`);
 				ws.send(
 					JSON.stringify({
 						source: "forge-shell",
 						type: "forge:capture-result",
 						reqId: msg.reqId,
-						dataUrl: image.toDataURL(),
+						dataUrl: `data:image/jpeg;base64,${scaled.toJPEG(72).toString("base64")}`,
 					}),
 				);
 			} catch (err) {

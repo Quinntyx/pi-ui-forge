@@ -462,16 +462,23 @@ function imageBlock(dataUrl: string): { type: "image"; data: string; mimeType: s
 	return { type: "image", data: match[2], mimeType: match[1] };
 }
 
-function savePng(cwd: string, subdir: string, name: string, dataUrl: string): string | null {
+function saveImage(cwd: string, subdir: string, name: string, dataUrl: string): string | null {
 	const match = /^data:(image\/[a-z+]+);base64,(.+)$/.exec(dataUrl);
 	if (!match) return null;
+	const ext = match[1] === "image/jpeg" ? "jpg" : match[1] === "image/webp" ? "webp" : "png";
 	const dir = path.join(cwd, subdir);
 	fs.mkdirSync(dir, { recursive: true });
-	const file = path.join(dir, name);
+	const file = path.join(dir, `${name}.${ext}`);
 	fs.writeFileSync(file, Buffer.from(match[2], "base64"));
 	return file;
 }
 
+/**
+ * Save the round's captures to disk. Nothing here goes inline to the model:
+ * page renders and crops are returned as paths; the caller decides what to
+ * read. Only the whole-canvas image is returned inline (it is the map of what
+ * pages carry markup).
+ */
 function saveReviewArtifacts(
 	cwd: string,
 	payload: ReviewPayload,
@@ -482,16 +489,17 @@ function saveReviewArtifacts(
 	const images: { canvas: string | null; pages: Record<string, string> } = { canvas: null, pages: {} };
 	try {
 		if (payload.canvasImage) {
-			images.canvas = savePng(cwd, dir, "canvas.png", payload.canvasImage) ?? null;
+			images.canvas = saveImage(cwd, dir, "canvas", payload.canvasImage) ?? null;
 		}
 		for (const shot of payload.pageImages) {
-			const file = savePng(cwd, dir, `${shot.page}.png`, shot.image);
+			const file = saveImage(cwd, dir, shot.page, shot.image);
 			if (file) images.pages[shot.page] = file;
 		}
 		let i = 0;
 		for (const d of payload.drawings) {
 			if (!d.image) continue;
-			savePng(cwd, "ann", `r${s.shotCounter}-${d.page ?? "canvas"}-${i++}.png`, d.image);
+			const file = saveImage(cwd, "ann", `r${s.shotCounter}-${d.page ?? "canvas"}-${i++}`, d.image);
+			if (file) d.image = file; // replace dataURL with the path in the result JSON
 		}
 	} catch (error) {
 		console.error("forge: failed to save review artifacts:", error);
@@ -622,18 +630,14 @@ export default function (pi: ExtensionAPI) {
 			s.shotCounter += 1;
 			const dir = `shots/r${s.shotCounter}`;
 			const files: string[] = [];
-			const blocks: { type: "text" | "image"; [k: string]: unknown }[] = [];
 			for (const shot of shots) {
-				const file = savePng(s.cwd, dir, `${shot.page}.png`, shot.image);
+				const file = saveImage(s.cwd, dir, shot.page, shot.image);
 				if (file) files.push(file);
-				const match = /^data:(image\/[a-z+]+);base64,(.+)$/.exec(shot.image);
-				if (match) blocks.push({ type: "image", data: match[2], mimeType: match[1] });
 			}
+			// paths only — the model reads specific pages with its read tool when
+			// it needs a zoomed view; inline images would accumulate in context
 			return {
-				content: [
-					{ type: "text", text: `Screenshots saved: ${files.join(", ")}` },
-					...blocks,
-				] as never,
+				content: [{ type: "text", text: `Screenshots saved (read with your read tool as needed):\n${files.join("\n")}` }],
 				details: {},
 			};
 		},
@@ -692,16 +696,22 @@ export default function (pi: ExtensionAPI) {
 				images: saved.images,
 			};
 
+			// Exactly one inline image per round: the whole-canvas view (downscaled
+			// JPEG from the shell) showing which pages carry markup. Page renders
+			// and draw crops are paths in the summary JSON; the model reads them
+			// on demand with its read tool. Older rounds' images naturally age out
+			// via compaction without any cache invalidation.
 			const content: ({ type: "text"; text: string } | { type: "image"; data: string; mimeType: string })[] = [
 				{ type: "text", text: JSON.stringify(summary, null, 2) },
 			];
-			const push = (dataUrl: string | null | undefined) => {
-				if (!dataUrl) return;
-				const match = /^data:(image\/[a-z+]+);base64,(.+)$/.exec(dataUrl);
-				if (match) content.push({ type: "image", data: match[2], mimeType: match[1] });
-			};
-			push(result.payload.canvasImage);
-			for (const shot of result.payload.pageImages) push(shot.image);
+			{
+				const push = (dataUrl: string | null | undefined) => {
+					if (!dataUrl) return;
+					const match = /^data:(image\/[a-z+]+);base64,(.+)$/.exec(dataUrl);
+					if (match) content.push({ type: "image", data: match[2], mimeType: match[1] });
+				};
+				push(result.payload.canvasImage);
+			}
 
 			return { content: content as never, details: {} };
 		},

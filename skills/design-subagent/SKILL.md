@@ -88,9 +88,15 @@ here.
    ids; elements without ids are addressed by fragile hierarchical fallbacks
    (`#panel > div:nth-child(2) > button:nth-child(1)`) — don't make the user
    rely on that.
-2. **Self-inspect before every review.** `mock_screenshot`, then read every
-   page you changed and iterate internally until it looks right. Never push
-   visual regressions onto the user to discover.
+2. **Self-inspect before every review.** Call `mock_screenshot` after every
+   build, then read (with your read tool) every page you changed and iterate
+   internally until it looks right. Never push visual regressions onto the
+   user to discover. Note the image budget: `mock_screenshot` returns file
+   paths, not inline images; the `mock_review` result inlines only the
+   whole-canvas image (your map of where markup lives) — read individual
+   page renders from `shots/` on demand when you need a zoomed view. Don't
+   re-read images you've already acted on; every image persists in your
+   context and providers cap request size.
 3. **Real React.** Idiomatic components and CSS as in any web project — but
    see the speed rules above for state and data.
 4. **`mock_review` is the only handover.** When it returns, act on exactly
