@@ -25,16 +25,42 @@ in TypeScript, in-process.
 - `scripts/` — `build.mjs` (esbuild mock-app build written into each mock
   folder), `runtime.js` (injected into mock pages: capture + inspect-pick),
   `smoke-server.mjs` (end-to-end smoke test harness)
-- `skills/ui-mock/` — parent-facing skill: spawn, wait, replicate pixel-near
-- `skills/design-subagent/` — subagent-facing skill: loop mechanics, taste,
-  mock-speed rules (dummy data, no useState)
+- `skills/design-ui/` — the bundled skill: how to author mocks with the
+  forge tools (works in any agent)
+- `skills/ui-mock/` — optional, NOT installed by the package: the
+  pi-ptc-next + pi-subagents orchestration skill (spawn a design subagent
+  on the dedicated profile, collect the contract, replicate pixel-near)
 
-## Prerequisites
+## Install & usage
 
-- `pi-subagents` ≥ the `profile=` kwarg version
-  (`subagents.agent(..., profile="design-subagents", cwd=...)`)
-- a `~/.config/pi/profiles/design-subagents` profile (mirror the `subagents`
-  profile) with pi-ui-forge in its `packages`
+```sh
+pi install git:git.quinntyx.dev/quinntyx/pi-ui-forge
+```
+
+Generic usage (any agent, main profile is fine): the bundled `design-ui`
+skill covers the loop — the agent writes the mock app into a folder of its
+choosing, drives the editor tools, and hands over with `mock_review`.
+
+## Using it as a design-subagent loop (author's setup)
+
+If you run [pi-ptc-next](https://github.com/Quinntyx/pi-ptc-next) with
+pi-subagents, the editor becomes the control plane for a dedicated design
+subagent: your main agent spawns one (profile `design-subagents` with
+pi-ui-forge in its packages, cwd = the mock folder), the subagent drives the
+editor, and closing the window returns the final design contract to the
+parent. Setup:
+
+- create a `~/.config/pi/profiles/design-subagents` profile (mirror the
+  `subagents` profile) with pi-ui-forge in its `packages`
+- **manually copy `skills/ui-mock/` from this repo into your main profile's
+  `skills/` directory** — it is deliberately excluded from package
+  installation (it is only useful with the pi-ptc-next/pi-subagents stack,
+  and pi has no way to install a skill into a different profile than the
+  package's). It's a plain folder — copy it once, update it when the repo
+  moves.
+- `pi-subagents` needs the `profile=` kwarg (`subagents.agent(...,
+  profile="design-subagents", cwd=...)`), which pi-ptc-next's PTC venv
+  auto-provisions alongside.
 
 ## Development
 

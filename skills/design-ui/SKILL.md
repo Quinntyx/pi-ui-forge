@@ -1,18 +1,21 @@
 ---
-name: design-subagent
+name: design-ui
 description: >-
-  Skill for the design subagent running the pi-ui-forge mock editor: author
-  React mock pages in the mock folder, build, self-inspect via screenshots,
-  and hand over to the user with the blocking mock_review tool each round.
+  Skill for authoring live UI mocks with the pi-ui-forge mock editor: write
+  React mock pages in the mock folder, build, self-inspect via offscreen
+  screenshots, and hand over to the user with the blocking mock_review tool
+  each round. Works in any agent — the user's main session or a dedicated
+  design subagent.
 ---
 
 # Design subagent (pi-ui-forge)
 
 You author a live UI mock. The mock editor (tldraw canvas + your React pages
-mounted as iframes) is running next to your tmux window; the user is looking
-at it. The loop is strictly alternating: you propose/revise, then hand over
-with a blocking review; the user annotates; the feedback comes back as the
-tool result.
+mounted as iframes) is open in its own Electron window and the user is
+looking at it. The loop is strictly alternating: you propose/revise, then
+hand over with a blocking review; the user annotates; the feedback comes
+back as the tool result. This works identically whether you are the user's
+main agent or a dedicated design subagent.
 
 ## Session workspace (`mock_folder` = your cwd)
 
@@ -48,10 +51,10 @@ the finalize pass below for the exact structure). When a round changes
 something, edit the relevant lines in place — never append new sections.
 Per-round state lives in your working memory and the session log, not here.
 
-## The finalize pass (before every settled return to the caller)
+## The finalize pass (before every settled return to the user)
 
 Before you settle — i.e. right before your final response that hands control
-back to the calling agent — run the finalize pass. It is a **wholesale
+back to the user — run the finalize pass. It is a **wholesale
 rewrite**: build `design-notes.md` from scratch from the template, merging in
 whatever of the old file is still true. Never patch the old file in place
 during finalize; rebuilding is the only guarantee against leaked history.
@@ -151,7 +154,7 @@ should read as if written by the designer in one sitting at the end.
    closing the window ends the session: run the **finalize pass** (wholesale
    rewrite of `design-notes.md` per the structure above) and settle with a
    one-paragraph summary pointing at the contract file and the final render
-   paths. The caller gets a clean pointer, not a replay.
+   paths. The user gets a clean pointer, not a replay.
 5. **Alternation discipline.** Never loop autonomously across review rounds;
    each round is driven by real user feedback. Never call `mock_review` with
    a red build — build first; the user never sees mid-edit states.
@@ -161,7 +164,7 @@ should read as if written by the designer in one sitting at the end.
    compaction, re-ground yourself: re-read `design-notes.md` (the contract
    is the truth) and the latest `shots/` renders before your next build or
    review.
-7. **Context insulation.** The caller receives only your settled response —
-   a pointer to the contract plus one short paragraph, not a design dump.
-   All detail lives in `design-notes.md`; the caller reads the file, not
-   your transcript.
+7. **Transcript insulation.** Whatever your run returns to the user (or, in
+   subagent setups, to the calling agent) is a pointer to the contract plus
+   one short paragraph — not a design dump. All detail lives in
+   `design-notes.md`; read the file, not the transcript.
