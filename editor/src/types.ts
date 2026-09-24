@@ -54,8 +54,8 @@ export interface SendBackPayload {
 // --- WS messages -----------------------------------------------------------
 
 export type HostToEditor =
-	| { type: "init"; world: World; phase: Phase; reviewId: number; note: string | null }
-	| { type: "set-world"; world: World }
+	| { type: "init"; world: World; hashes: Record<string, string>; phase: Phase; reviewId: number; note: string | null }
+	| { type: "set-world"; world: World; hashes: Record<string, string> }
 	| { type: "review-start"; reviewId: number; note: string | null }
 	| { type: "review-end" }
 	| { type: "session-closed" }

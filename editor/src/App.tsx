@@ -5,6 +5,7 @@ import { addCommentFromPick, setMode, setPickMode, highlight, removeComment } fr
 import { buildSendBack } from "./sendback";
 import { connect, onMessage, send } from "./ws";
 import { getState, setState, useSyncState } from "./store";
+import { applyPageHashes } from "./hashes";
 import type { World } from "./types";
 
 export default function App() {
@@ -16,10 +17,12 @@ export default function App() {
 			switch (msg.type) {
 				case "init":
 					applyWorld(msg.world);
+					applyPageHashes(msg.hashes);
 					setState({ phase: msg.phase, reviewId: msg.reviewId, reviewNote: msg.note });
 					break;
 				case "set-world":
 					applyWorld(msg.world);
+					applyPageHashes(msg.hashes);
 					break;
 				case "review-start":
 					setState({ phase: "review", reviewId: msg.reviewId, reviewNote: msg.note });

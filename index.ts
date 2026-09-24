@@ -82,6 +82,8 @@ interface ForgeSession {
 	token: string;
 	clients: Map<WebSocket, "editor" | "shell">;
 	world: { mocks: WorldMock[] };
+	/** bundle hash per page name — editors reload iframes whose hash changed */
+	pageHashes: Record<string, string>;
 	phase: "idle" | "review" | "closed";
 	reviewId: number;
 	reviewNote: string | null;
@@ -245,6 +247,7 @@ function handleConnection(s: ForgeSession, ws: WebSocket, kind: "editor" | "shel
 				JSON.stringify({
 					type: "init",
 					world: s.world,
+					hashes: s.pageHashes,
 					phase: s.phase,
 					reviewId: s.reviewId,
 					note: s.reviewNote,
@@ -350,6 +353,7 @@ async function ensureSession(ctx: ExtensionContext): Promise<ForgeSession> {
 		token,
 		clients: new Map(),
 		world: session?.world ?? { mocks: [] },
+		pageHashes: session?.pageHashes ?? {},
 		phase: "idle",
 		reviewId: session?.reviewId ?? 0,
 		reviewNote: null,
@@ -497,9 +501,11 @@ async function runBuild(cwd: string): Promise<{ ok: boolean; tail: string }> {
 	return { ok: code === 0, tail: Buffer.concat(out).toString().trim().slice(-4000) };
 }
 
+// Canvas ids are stable per-position (m0, m1, …) so labels can change freely
+// across revisions without invalidating the tldraw persistence key — user
+// annotations live in per-canvas IndexedDB stores keyed by this id.
 function deriveWorldMock(m: { label: string; pages: string[] }, i: number): WorldMock {
-	const slug = m.label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || `mock-${i}`;
-	return { id: `m${i}-${slug}`.slice(0, 40), label: m.label, pages: [...m.pages] };
+	return { id: `m${i}`, label: m.label, pages: [...m.pages] };
 }
 
 // --- extension -----------------------------------------------------------------------------------
@@ -560,9 +566,11 @@ export default function (pi: ExtensionAPI) {
 			}
 
 			const world = { mocks: params.mocks.map(deriveWorldMock) };
+			const hashes = Object.fromEntries(manifest.pages.map((p) => [p.name, p.hash]));
 			const s = await ensureSession(ctx);
 			s.world = world;
-			if (firstEditor(s)) broadcastEditors(s, { type: "set-world", world });
+			s.pageHashes = { ...s.pageHashes, ...hashes };
+			if (firstEditor(s)) broadcastEditors(s, { type: "set-world", world, hashes: s.pageHashes });
 			return {
 				content: [
 					{
