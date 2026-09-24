@@ -45,9 +45,17 @@ export default function App() {
 		};
 	}, []);
 
-	const handlePick = (msg: PickMessage) => {
-		addCommentFromPick(msg);
-	};
+const handlePick = (msg: PickMessage) => {
+	try {
+		const id = addCommentFromPick(msg);
+		if (id === null) {
+			console.error("[forge-editor] pick dropped: no matching frame/editor", msg);
+		}
+	} catch (error) {
+		// never let a pick crash the whole editor (tldraw error screen softlocks)
+		console.error("[forge-editor] pick handler failed", msg, error);
+	}
+};
 
 	usePickListener(handlePick);
 
@@ -110,19 +118,20 @@ export default function App() {
 				<div className="forge-banner closed">Session closed — you can close this window.</div>
 			)}
 
-			<main className="forge-main">
-				{state.world.mocks.map((m) => (
-					<MockCanvas key={m.id} mock={m} active={m.id === state.activeCanvas} />
-				))}
-				{state.world.mocks.length === 0 && (
-					<div className="forge-empty">
-						Waiting for the design agent to build pages…
-						<span>It writes React into the mock folder and calls mock_build.</span>
-					</div>
-				)}
+			<main className="forge-body">
+				<div className="forge-main">
+					{state.world.mocks.map((m) => (
+						<MockCanvas key={m.id} mock={m} active={m.id === state.activeCanvas} />
+					))}
+					{state.world.mocks.length === 0 && (
+						<div className="forge-empty">
+							Waiting for the design agent to build pages…
+							<span>It writes React into the mock folder and calls mock_build.</span>
+						</div>
+					)}
+				</div>
+				{state.phase === "review" && active && <ReviewSidebar canvasId={active.id} />}
 			</main>
-
-			{state.phase === "review" && active && <ReviewSidebar canvasId={active.id} />}
 		</div>
 	);
 }

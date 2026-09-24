@@ -22,7 +22,7 @@ function findIframes(pages: string[] | null): Map<string, Window> {
 	return result;
 }
 
-function requestIframeShot(win: Window, timeoutMs = 20000): Promise<string | null> {
+function requestIframeShot(win: Window, timeoutMs = 12000): Promise<string | null> {
 	return new Promise((resolve) => {
 		const reqId = newId("shot");
 		const timer = setTimeout(() => {
@@ -48,21 +48,19 @@ function requestIframeShot(win: Window, timeoutMs = 20000): Promise<string | nul
 	});
 }
 
-/** Capture full-page renders of the given pages (all when null). */
+/** Capture full-page renders of the given pages (all when null) — parallel. */
 export async function capturePages(
 	pages: string[] | null,
 ): Promise<{ page: string; image: string }[]> {
 	const frames = findIframes(pages);
-	const shots: { page: string; image: string }[] = [];
-	for (const [page, win] of frames) {
-		const image = await requestIframeShot(win);
-		if (image) shots.push({ page, image });
-	}
-	return shots;
+	const shots = await Promise.all(
+		[...frames.entries()].map(async ([page, win]) => ({ page, image: await requestIframeShot(win) })),
+	);
+	return shots.filter((s): s is { page: string; image: string } => !!s.image);
 }
 
 /** Capture the whole visible editor window via the Electron shell. */
-export async function captureCanvas(timeoutMs = 10000): Promise<string | null> {
+export async function captureCanvas(timeoutMs = 6000): Promise<string | null> {
 	const reqId = newId("cap");
 	const response = await request(
 		{ type: "capture-request", reqId },

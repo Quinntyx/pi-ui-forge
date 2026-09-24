@@ -49,6 +49,8 @@ const commentPinProps = {
 	commentId: T.string,
 	num: T.number,
 	canvasId: T.string,
+	w: T.number,
+	h: T.number,
 };
 
 export class CommentPinShapeUtil extends BaseBoxShapeUtil<CommentPinShape> {

@@ -271,6 +271,15 @@ function handleConnection(s: ForgeSession, ws: WebSocket, kind: "editor" | "shel
 			return;
 		}
 
+		if (msg.type === "capture-request" && kind === "editor") {
+			// forward to the Electron shell, which owns webContents.capturePage
+			const shell = shellClient(s);
+			if (shell) {
+				shell.send(JSON.stringify({ type: "forge:capture", reqId: (msg as { reqId: string }).reqId }));
+			}
+			return;
+		}
+
 		if (msg.type === "forge:capture-result" && kind === "shell") {
 			// relay to editors: their pending captureCanvas() matches on reqId
 			broadcastEditors(s, msg);

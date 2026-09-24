@@ -1,5 +1,9 @@
 // Assembling the send-back payload: comments, drawings (viewport crops around
 // tldraw shapes), whole-canvas image, per-page images.
+//
+// Performance contract: everything runs in parallel with short timeouts — the
+// send-back button resolving fast matters more than a perfect crop; a failed
+// capture ships as null rather than blocking the round-trip.
 
 import { captureCanvas, capturePages } from "./capture";
 import { editors } from "./canvas";
@@ -16,7 +20,7 @@ async function cropAroundBounds(
 	const img = new Image();
 	await new Promise<void>((resolve, reject) => {
 		img.onload = () => resolve();
-		img.onerror = reject;
+		img.onerror = () => reject(new Error("capture decode failed"));
 		img.src = capture;
 	});
 	const pad = 24;
@@ -46,13 +50,6 @@ function intersectArea(
 	return w > 0 && h > 0 ? w * h : 0;
 }
 
-function centerDist(
-	a: { x: number; y: number; w: number; h: number },
-	b: { x: number; y: number; w: number; h: number },
-): number {
-	return Math.hypot(a.x + a.w / 2 - (b.x + b.w / 2), a.y + a.h / 2 - (b.y + b.h / 2));
-}
-
 /** Nearest frame page for a shape: most overlap, else nearest center. */
 function nearestPage(editor: Editor, bounds: { x: number; y: number; w: number; h: number }): string | null {
 	let best: { page: string; overlap: number; dist: number } | null = null;
@@ -73,6 +70,15 @@ function nearestPage(editor: Editor, bounds: { x: number; y: number; w: number; 
 	return best?.page ?? null;
 }
 
+function shapeText(editor: Editor, shape: NonNullable<ReturnType<Editor["getShape"]>>): string | undefined {
+	try {
+		const text = editor.getText(shape);
+		return text && text.trim() !== "" ? text : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
 async function collectDrawings(canvasId: string): Promise<ForgeDrawing[]> {
 	const editor = editors.get(canvasId);
 	if (!editor) return [];
@@ -81,34 +87,37 @@ async function collectDrawings(canvasId: string): Promise<ForgeDrawing[]> {
 		const s = editor.pageToScreen(p);
 		return { x: s.x, y: s.y };
 	};
-	const drawings: ForgeDrawing[] = [];
-	for (const id of editor.getCurrentPageShapeIds()) {
-		const shape = editor.getShape(id);
-		if (!shape || isForgeShape(shape)) continue;
-		const bounds = editor.getShapePageBounds(id);
-		if (!bounds) continue;
-		let image: string | null = null;
-		if (capture) {
-			try {
-				image = await cropAroundBounds(
-					capture,
-					{ x: bounds.x, y: bounds.y, w: bounds.w, h: bounds.h },
-					pageToScreen,
-				);
-			} catch {
-				image = null;
+	const shapes = [...editor.getCurrentPageShapeIds()]
+		.map((id) => editor.getShape(id))
+		.filter((s): s is NonNullable<typeof s> => !!s && !isForgeShape(s));
+
+	return Promise.all(
+		shapes.map(async (shape) => {
+			const bounds = editor.getShapePageBounds(shape.id);
+			if (!bounds) return null;
+			const rect = { x: bounds.x, y: bounds.y, w: bounds.w, h: bounds.h };
+			let image: string | null = null;
+			if (capture) {
+				try {
+					image = await cropAroundBounds(capture, rect, (p) => {
+						const s = editor.pageToScreen(p);
+						return { x: s.x, y: s.y };
+					});
+				} catch {
+					image = null;
+				}
 			}
-		}
-		const text = shape.type === "text" ? "text-note" : undefined;
-		drawings.push({
-			canvasId,
-			page: nearestPage(editor, { x: bounds.x, y: bounds.y, w: bounds.w, h: bounds.h }),
-			bounds: { x: bounds.x, y: bounds.y, w: bounds.w, h: bounds.h },
-			text,
-			image,
-		});
-	}
-	return drawings;
+			const text = shapeText(editor, shape);
+			const drawing: ForgeDrawing = {
+				canvasId,
+				page: nearestPage(editor, rect),
+				bounds: rect,
+				image,
+			};
+			if (text !== undefined) drawing.text = text;
+			return drawing;
+		}),
+	).then((d) => d.filter((x): x is ForgeDrawing => x !== null));
 }
 
 export async function buildSendBack(reviewId: number, approved: boolean): Promise<SendBackPayload> {
@@ -117,20 +126,24 @@ export async function buildSendBack(reviewId: number, approved: boolean): Promis
 		.filter((c) => c.text.trim() !== "")
 		.map((c) => ({ text: c.text, page: c.page, selector: c.selector }));
 
-	const drawings: ForgeDrawing[] = [];
-	for (const mock of state.world.mocks) {
-		for (const d of await collectDrawings(mock.id)) drawings.push(d);
-	}
+	const drawingGroups = await Promise.all(state.world.mocks.map((m) => collectDrawings(m.id)));
+	const drawings = drawingGroups.flat();
 
-	const pageImages = await capturePages(state.picked.length ? state.picked : null);
-	const canvasImage = await captureCanvas();
+	const [pageImages, canvasImage] = await Promise.all([
+		capturePages(state.picked.length ? state.picked : null),
+		captureCanvas(),
+	]);
 
 	return {
 		reviewId,
 		picked: state.picked,
 		description: state.description,
 		comments,
-		drawings: drawings.map((d) => ({ page: d.page, image: d.image, text: d.text })),
+		drawings: drawings.map((d) => ({
+			page: d.page,
+			image: d.image,
+			text: d.text,
+		})),
 		canvasImage,
 		pageImages,
 		approved,

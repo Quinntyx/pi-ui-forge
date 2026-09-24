@@ -47,3 +47,27 @@ border on the row.
 - Pin color-coding per comment (A/B) vs single accent (C)?
 - Banner as strip (A/C) vs floating toast (B)?
 - Statusline bar (C) — keep, drop, or fold hints elsewhere?
+
+## Review round 1 — feedback came back incomplete
+
+User drew several note shapes on the C canvas (Statusline Console) but the
+markup package contained no readable note text, no picked pages, no typed
+comments (all drawing images null, texts literally "text-note"). Treating C
+as the current pick; asking for the notes to be re-sent so I can act on them.
+
+## Review round 2 — still no readable markup
+
+Resent review with instructions; same package came back (drawings on page "c"
+with text "text-note", no comments/picks/description, null images). The
+send-back of canvas note text appears broken in the plugin, or the notes are
+placeholders. Stopping here: C (Statusline Console) is clearly the canvas the
+user engaged with; the concrete change requests are unknown.
+
+## Status at settle
+
+- Three chrome variants built and self-inspected (fresh renders in shots/r9/).
+- A and B are clean; C is clean and was the only one annotated.
+- BLOCKED on: readable user feedback. Either the pi-ui-forge send-back drops
+  note-shape text (plugin bug worth filing: drawings arrive with image=null,
+  text=literal "text-note"), or the user needs to type notes into the sidebar
+  comment inputs / description textarea before Send back.

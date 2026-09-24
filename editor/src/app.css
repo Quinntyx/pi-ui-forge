@@ -119,9 +119,16 @@ body,
 	background: #4a3b3b;
 }
 
+.forge-body {
+	display: flex;
+	flex: 1 1 auto;
+	min-height: 0;
+}
+
 .forge-main {
 	position: relative;
 	flex: 1 1 auto;
+	min-width: 0;
 	overflow: hidden;
 }
 
@@ -144,19 +151,15 @@ body,
 
 /* sidebar */
 .forge-sidebar {
-	position: absolute;
-	top: 0;
-	right: 0;
-	bottom: 0;
-	width: 320px;
-	background: #23252fee;
-	border-left: 1px solid #333;
+	flex: 0 0 340px;
+	min-width: 0;
+	background: #23252f;
+	border-left: 1px solid #33364a;
 	padding: 12px;
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
 	overflow-y: auto;
-	z-index: 200;
 }
 
 .forge-sidebar h3 {
