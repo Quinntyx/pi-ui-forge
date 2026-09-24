@@ -65,9 +65,43 @@ user engaged with; the concrete change requests are unknown.
 
 ## Status at settle
 
-- Three chrome variants built and self-inspected (fresh renders in shots/r9/).
-- A and B are clean; C is clean and was the only one annotated.
-- BLOCKED on: readable user feedback. Either the pi-ui-forge send-back drops
-  note-shape text (plugin bug worth filing: drawings arrive with image=null,
-  text=literal "text-note"), or the user needs to type notes into the sidebar
-  comment inputs / description textarea before Send back.
+## Review round 3 — full markup received (plugin fix confirmed)
+
+Converged on C (Statusline Console). Applied all 10 comments:
+
+- Removed: status pill, app-identity, banner hint, statusline version.
+- send-back is icon-only (paper plane, tooltip ⏎).
+- approve moved to topbar corner (ghost button).
+- Agent banner now sits directly above the prompt bar (attached stack,
+  `#prompt-stack`), replacing the old "round 1 details" block.
+- Comment editing = popup editor under the cursor: pick an element → popup
+  appears at the cursor with numbered (next color) badge + input; ⏎ finalizes.
+  Demo on the first mini-card of the home frame (badge 4, blue, `.pop-target`).
+- Style panel rebuilt to tldraw's exact narrow vertical strip: fill / dash /
+  size rows of 4 small cells + leading property icons, colors as a 2×4 grid
+  with ✓ on the active swatch. NOTE: the user's placed reference image did
+  NOT come through (drawings arrived image:null again) — rebuilt from
+  knowledge of tldraw's UI; ask them to re-place it if it's still off.
+- Tool dock moved to bottom-left so it can't collide with the style panel.
+
+## State pages (per the round-3 description)
+
+Multiple pages showing app states, one canvas:
+- `a` — annotate · awaiting markup (banner + prompt bar + popup editor demo)
+- `a-work` — agent working (progress animation replaces prompt bar; pick
+  control dimmed; WORKING orange statusline; Checkout tab active)
+- `a-interact` — interact mode (no pins/dock/panel/prompt; INTERACT blue
+  statusline; home tab active; I key active)
+
+Status pill eliminated everywhere: the bottom bar itself signals state
+(green REVIEW / orange WORKING / blue INTERACT accent segments).
+
+## Gotchas (confirmed)
+
+- Editor iframes do NOT hot-swap on mock_build — use a NEW canvas label per
+  push to force fresh iframes, else screenshots show stale content.
+- Drawing/note images in markup packages still arrive as image:null (only
+  typed text + selectors survive). Typed comments are readable — good enough
+  to iterate, but reference images must be re-sent or described in text.
+- mock_screenshot captures only pages fully inside the capture viewport —
+  with 3+ frames on one canvas, capture the last page on a solo canvas.

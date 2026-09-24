@@ -1,6 +1,8 @@
 import "./a.css";
 
-/* dummy data — comment color == canvas pin color == badge accent */
+/* state 2 — agent working: prompt bar replaced by a progress animation,
+   status pill eliminated (the bar itself communicates the state) */
+
 const pins = [
 	{ n: 1, color: "yellow", selector: ".checkout-cta", text: "Filled green; outline reads disabled." },
 	{ n: 2, color: "orange", selector: "#price-row", text: "Baseline the price with the title." },
@@ -32,13 +34,13 @@ function Pin({ p, pos }: { p: typeof pins[number]; pos: string }) {
 	);
 }
 
-export default function A() {
+export default function AWork() {
 	return (
 		<div className="app">
 			<header id="topbar">
 				<nav id="tabs">
-					<button className="tab tab-active"><span className="tab-idx">0</span>Option A</button>
-					<button className="tab"><span className="tab-idx">1</span>Checkout</button>
+					<button className="tab"><span className="tab-idx">0</span>Option A</button>
+					<button className="tab tab-active"><span className="tab-idx">1</span>Checkout</button>
 					<button className="tab"><span className="tab-idx">2</span>home</button>
 				</nav>
 				<div className="topbar-spring" />
@@ -47,8 +49,8 @@ export default function A() {
 					<span className="mode-sep">/</span>
 					<span className="mode-key mode-key-active">A</span><span className="mode-label mode-label-active">annotate</span>
 				</div>
-				<div id="pick-control" title="pick element">
-					<button id="pick-btn" aria-label="pick element (P)">
+				<div id="pick-control" title="pick element — locked while the agent works">
+					<button id="pick-btn" className="pick-btn-dim" disabled aria-label="pick element (locked)">
 						<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
 							<rect x="7" y="7" width="7" height="7" fill="none" stroke="currentColor" strokeWidth="1.3" />
 							<path d="M2.5 1.5v9.6l2.8-2.4 1.6 3.5 2-1-1.6-3.4h3.4z" fill="currentColor" />
@@ -56,7 +58,6 @@ export default function A() {
 					</button>
 					<span className="mode-key">P</span>
 				</div>
-				<button id="topbar-approve">approve</button>
 			</header>
 
 			<main id="workspace">
@@ -71,7 +72,6 @@ export default function A() {
 						))}
 					</div>
 
-					{/* tldraw style panel — narrow vertical strip */}
 					<div id="style-panel" aria-label="style">
 						<div className="sp-section" id="sp-fill">
 							<span className="sp-icon"><svg width="12" height="12" viewBox="0 0 16 16"><path d="M8 2C5.4 5.6 3.8 7.8 3.8 10a4.2 4.2 0 0 0 8.4 0C12.2 7.8 10.6 5.6 8 2z" fill="none" stroke="currentColor" strokeWidth="1.3" /></svg></span>
@@ -82,7 +82,7 @@ export default function A() {
 							</div>
 						</div>
 						<div className="sp-section" id="sp-dash">
-							<span className="sp-icon"><svg width="12" height="12" viewBox="0 0 16 16"><path d="M2 4h4M9 4h5M2 11h5M10 11h4" stroke="currentColor" strokeWidth="1.4" strokeDasharray="0" /></svg></span>
+							<span className="sp-icon"><svg width="12" height="12" viewBox="0 0 16 16"><path d="M2 4h4M9 4h5M2 11h5M10 11h4" stroke="currentColor" strokeWidth="1.4" /></svg></span>
 							<div className="sp-grid">
 								<button className="sp-cell" title="solid"><span style={{ width: 12, borderTop: "2px solid currentColor", display: "block" }} /></button>
 								<button className="sp-cell" title="dashed"><span style={{ width: 12, borderTop: "2px dashed currentColor", display: "block" }} /></button>
@@ -112,7 +112,7 @@ export default function A() {
 					</div>
 
 					<div className="frame" style={{ width: 430 }}>
-						<div className="frame-label">checkout · r3</div>
+						<div className="frame-label">checkout · r3 → r4</div>
 						<div className="frame-body">
 							<div className="mini-topbar">
 								<span className="mini-dot" /><span className="mini-dot" /><span className="mini-dot" />
@@ -132,7 +132,7 @@ export default function A() {
 					</div>
 
 					<div className="frame" style={{ width: 390 }}>
-						<div className="frame-label">home · r3</div>
+						<div className="frame-label">home · r3 → r4</div>
 						<div className="frame-body">
 							<div className="mini-topbar">
 								<span className="mini-dot" /><span className="mini-dot" /><span className="mini-dot" />
@@ -142,59 +142,37 @@ export default function A() {
 							<div className="mini-line" style={{ width: "80%" }} />
 							<div className="mini-line" style={{ width: "64%" }} />
 							<div className="mini-cards">
-								<div className="mini-card pop-target" />
-								<div className="mini-card" /><div className="mini-card" />
-								{/* popup comment editor — appears under the cursor right after picking */}
-								<div id="comment-pop">
-									<svg className="pop-cursor" width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
-										<path d="M2.5 1.5v9.6l2.8-2.4 1.6 3.5 2-1-1.6-3.4h3.4z" fill="currentColor" stroke="#1f262b" strokeWidth="1" />
-									</svg>
-									<span className="pin c-blue">4</span>
-									<span className="pop-main">
-										<input className="pop-input" defaultValue="add hover states + 2px lift" aria-label="new comment" autoFocus />
-										<div className="pop-hint"><b>⏎</b> finalize comment · <b>esc</b> cancel</div>
-									</span>
-								</div>
+								<div className="mini-card" /><div className="mini-card" /><div className="mini-card" />
 							</div>
 							<Pin p={pins[2]} pos="pin-pos-hero" />
 						</div>
 					</div>
 
-					{/* floating stack: agent banner directly above the prompt bar */}
+					{/* agent working: banner + progress animation replace the prompt bar */}
 					<div id="prompt-stack">
 						<div id="review-banner">
-							<span className="banner-round">R1</span>
+							<span className="banner-round">R2</span>
 							<span className="banner-text">
-								CTA hierarchy + hero spacing reworked — check pin <b>1</b>, price baseline in <b>2</b>.
+								Working on your markup — baseline the price row (<b>2</b>), flatten hero shadow (<b>3</b>).
 							</span>
 						</div>
-						<div id="prompt-bar">
-							<div id="prompt-input-row">
-								<span className="prompt-caret">›</span>
-								<input
-									className="prompt-input"
-									defaultValue="CTA hierarchy + hero spacing reworked; CTA is the only filled element now."
-									aria-label="describe the change"
-								/>
-								<button id="send-back" title="send back (⏎)" aria-label="send back">
-									<svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true">
-										<path d="M2.5 7.6L13.5 2.4l-3.8 11.2-2.5-4.7-4.7-1.3z" fill="currentColor" />
-										<path d="M13.5 2.4L7.2 8.9" stroke="#232a26" strokeWidth="1" />
-									</svg>
-								</button>
+						<div id="progress-bar">
+							<div className="progress-head">
+								<span className="progress-spinner" />
+								<span>revising checkout + home…</span>
 							</div>
+							<div className="progress-track"><div className="progress-fill" /></div>
+							<div className="progress-meta">round 2 · 2 pages · started 12s ago · esc to interrupt</div>
 						</div>
 					</div>
 				</section>
 			</main>
 
 			<footer id="statusline">
-				<span className="sl-seg sl-seg-accent">REVIEW</span>
-				<span className="sl-seg">round 1 · 2 pages picked · 3 comments</span>
+				<span className="sl-seg sl-seg-accent sl-seg-accent-working">WORKING</span>
+				<span className="sl-seg">round 2 · revising 2 pages · 3 comments</span>
 				<span className="sl-spring" />
-				<span className="sl-seg sl-hint"><b>⏎</b> send back</span>
-				<span className="sl-seg sl-hint"><b>esc</b> cancel pick</span>
-				<span className="sl-seg sl-hint"><b>P</b> pick element</span>
+				<span className="sl-seg sl-hint"><b>esc</b> interrupt</span>
 			</footer>
 		</div>
 	);

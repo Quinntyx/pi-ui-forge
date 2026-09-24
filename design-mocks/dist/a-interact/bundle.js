@@ -14572,43 +14572,17 @@ var require_jsx_runtime = __commonJS({
   }
 });
 
-// .forge/entry-a.mjs
+// .forge/entry-a-interact.mjs
 var import_client = __toESM(require_client(), 1);
 var import_react = __toESM(require_react(), 1);
 
-// app/pages/a.tsx
+// app/pages/a-interact.tsx
 var import_jsx_runtime = __toESM(require_jsx_runtime(), 1);
-var pins = [
-  { n: 1, color: "yellow", selector: ".checkout-cta", text: "Filled green; outline reads disabled." },
-  { n: 2, color: "orange", selector: "#price-row", text: "Baseline the price with the title." },
-  { n: 3, color: "purple", selector: ".hero-title", text: "Flatten the shadow to match frame 2." }
-];
-var tools = [
-  { id: "select", active: true, title: "Select (V)", d: "M4.5 2.5v11l3-2.6 1.8 3.8 2.3-1.1-1.8-3.7h4l-9.3-7.4z" },
-  { id: "hand", active: false, title: "Hand (H)", d: "M6 8V4.4a.9.9 0 0 1 1.8 0V8m0-2.6a.9.9 0 0 1 1.8 0V8m0-1.4a.9.9 0 0 1 1.8 0V9m0-.6a.9.9 0 0 1 1.8 0v2.4c0 2.3-1.8 4-4.2 4-2 0-3-.8-4.2-2.6L4.3 10c-.5-.7.4-1.6 1.1-1l.6.5z" },
-  { id: "draw", active: false, title: "Draw (D)", d: "M3 13.5l1-3.2 7-7 2.2 2.2-7 7-3.2 1zM10.2 4.1l2.2 2.2" },
-  { id: "eraser", active: false, title: "Eraser (E)", d: "M6.5 13.5H13M4.2 11.6l4.2-4.2 3.4 3.4-2.5 2.5H6.7l-2.5-2.5.9-.9 4.4-4.4 3.4 3.4" },
-  { id: "text", active: false, title: "Text (T)", d: "M3.5 3.5h9M8 3.5v9.5M6 13h4" },
-  { id: "shapes", active: false, title: "Shapes (R)", d: "M3 3h6.5v6.5H3zM10.5 9.5a3 3 0 1 1 0 .01" },
-  { id: "note", active: false, title: "Note (N)", d: "M3 3h10v7l-3 3H3zM10 13v-3h3" },
-  { id: "arrow", active: false, title: "Arrow", d: "M3 13L13 3M13 3h-4.5M13 3v4.5" },
-  { id: "line", active: false, title: "Line (L)", d: "M3.5 12.5l9-9" },
-  { id: "frame", active: false, title: "Frame (F)", d: "M4 2v12M12 2v12M2 4h12M2 12h12" }
-];
-function Pin({ p, pos }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: `pin-wrap ${pos} ${pos === "pin-pos-hero" ? "tip-right" : ""}`, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `pin c-${p.color}`, children: p.n }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: "pin-tip", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("code", { children: p.selector }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: p.text })
-    ] })
-  ] });
-}
-function A() {
+function AInteract() {
   return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "app", children: [
     /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("header", { id: "topbar", children: [
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("nav", { id: "tabs", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { className: "tab tab-active", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { className: "tab", children: [
           /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "tab-idx", children: "0" }),
           "Option A"
         ] }),
@@ -14616,65 +14590,21 @@ function A() {
           /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "tab-idx", children: "1" }),
           "Checkout"
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { className: "tab", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { className: "tab tab-active", children: [
           /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "tab-idx", children: "2" }),
           "home"
         ] })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "topbar-spring" }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { id: "mode-toggle", role: "group", "aria-label": "mode", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "mode-key", children: "I" }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "mode-label", children: "interact" }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "mode-key mode-key-modeI-active", children: "I" }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "mode-label mode-label-active", children: "interact" }),
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "mode-sep", children: "/" }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "mode-key mode-key-active", children: "A" }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "mode-label mode-label-active", children: "annotate" })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { id: "pick-control", title: "pick element", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { id: "pick-btn", "aria-label": "pick element (P)", children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", { width: "16", height: "16", viewBox: "0 0 16 16", "aria-hidden": "true", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("rect", { x: "7", y: "7", width: "7", height: "7", fill: "none", stroke: "currentColor", strokeWidth: "1.3" }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M2.5 1.5v9.6l2.8-2.4 1.6 3.5 2-1-1.6-3.4h3.4z", fill: "currentColor" })
-        ] }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "mode-key", children: "P" })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { id: "topbar-approve", children: "approve" })
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "mode-key", children: "A" }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "mode-label", children: "annotate" })
+      ] })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime.jsx)("main", { id: "workspace", children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", { id: "canvas-area", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { id: "tool-dock", role: "toolbar", "aria-label": "tools", children: tools.map((t) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { className: `tool ${t.active ? "tool-active" : ""}`, title: t.title, "aria-label": t.title, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", { width: "17", height: "17", viewBox: "0 0 16 16", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: t.d, fill: t.id === "select" ? "currentColor" : "none", stroke: "currentColor", strokeWidth: "1.3", strokeLinecap: "round", strokeLinejoin: "round" }) }) }, t.id)) }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { id: "style-panel", "aria-label": "style", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "sp-section", id: "sp-fill", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "sp-icon", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", { width: "12", height: "12", viewBox: "0 0 16 16", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M8 2C5.4 5.6 3.8 7.8 3.8 10a4.2 4.2 0 0 0 8.4 0C12.2 7.8 10.6 5.6 8 2z", fill: "none", stroke: "currentColor", strokeWidth: "1.3" }) }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "sp-grid", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { className: "sp-cell", title: "fill none", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "sp-glyph", style: { width: 10, height: 10, border: "1px solid currentColor", display: "block" } }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { className: "sp-cell", title: "fill half", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "sp-glyph", style: { width: 10, height: 10, border: "1px solid currentColor", background: "linear-gradient(135deg, transparent 50%, currentColor 50%)", display: "block" } }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { className: "sp-cell", title: "fill solid", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "sp-glyph", style: { width: 10, height: 10, background: "currentColor", display: "block" } }) })
-          ] })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "sp-section", id: "sp-dash", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "sp-icon", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", { width: "12", height: "12", viewBox: "0 0 16 16", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M2 4h4M9 4h5M2 11h5M10 11h4", stroke: "currentColor", strokeWidth: "1.4", strokeDasharray: "0" }) }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "sp-grid", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { className: "sp-cell", title: "solid", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { width: 12, borderTop: "2px solid currentColor", display: "block" } }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { className: "sp-cell", title: "dashed", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { width: 12, borderTop: "2px dashed currentColor", display: "block" } }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { className: "sp-cell", title: "dotted", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { width: 12, borderTop: "2px dotted currentColor", display: "block" } }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { className: "sp-cell", title: "drawn", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { width: 12, borderTop: "2px dotted currentColor", opacity: 0.6, display: "block" } }) })
-          ] })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "sp-section", id: "sp-size", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "sp-icon", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", { width: "12", height: "12", viewBox: "0 0 16 16", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M2 8h12M5 5L2 8l3 3M11 5l3 3-3 3", fill: "none", stroke: "currentColor", strokeWidth: "1.2" }) }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "sp-grid", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { className: "sp-cell", title: "S", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "sp-size-s", children: "S" }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { className: "sp-cell", title: "M", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "sp-size-m", children: "M" }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { className: "sp-cell sp-cell-active", title: "L", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "sp-size-l", children: "L" }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { className: "sp-cell", title: "XL", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "sp-size-xl", children: "XL" }) })
-          ] })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "sp-section", id: "sp-color", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "sp-icon", children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", { width: "12", height: "12", viewBox: "0 0 16 16", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", { cx: "8", cy: "8", r: "5.5", fill: "none", stroke: "currentColor", strokeWidth: "1.3" }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M8 2.5v11a5.5 5.5 0 0 0 0-11z", fill: "currentColor" })
-          ] }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "sp-grid sp-grid-2", children: ["grey", "red", "orange", "yellow", "green", "aqua", "blue", "purple"].map((c) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { className: `sp-cell ${c === "orange" ? "sp-cell-active" : ""}`, title: c, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `sp-swatch sw-${c}`, children: c === "orange" ? "\u2713" : "" }) }, c)) })
-        ] })
-      ] }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "frame", style: { width: 430 }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "frame-label", children: "checkout \xB7 r3" }),
         /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "frame-body", children: [
@@ -14691,9 +14621,7 @@ function A() {
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mini-line", style: { width: "72%" } }),
           /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mini-line", style: { width: "55%" } }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { className: "mini-btn checkout-cta", id: "checkout-cta", children: "Complete order \u2014 $48.00" }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pin, { p: pins[0], pos: "pin-pos-cta" }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pin, { p: pins[1], pos: "pin-pos-price" })
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { className: "mini-btn checkout-cta", id: "checkout-cta", children: "Complete order \u2014 $48.00" })
         ] })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "frame", style: { width: 390 }, children: [
@@ -14709,76 +14637,27 @@ function A() {
           /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mini-line", style: { width: "80%" } }),
           /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mini-line", style: { width: "64%" } }),
           /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "mini-cards", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mini-card pop-target" }),
             /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mini-card" }),
             /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mini-card" }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { id: "comment-pop", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", { className: "pop-cursor", width: "14", height: "14", viewBox: "0 0 16 16", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M2.5 1.5v9.6l2.8-2.4 1.6 3.5 2-1-1.6-3.4h3.4z", fill: "currentColor", stroke: "#1f262b", strokeWidth: "1" }) }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "pin c-blue", children: "4" }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: "pop-main", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", { className: "pop-input", defaultValue: "add hover states + 2px lift", "aria-label": "new comment", autoFocus: true }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "pop-hint", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("b", { children: "\u23CE" }),
-                  " finalize comment \xB7 ",
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("b", { children: "esc" }),
-                  " cancel"
-                ] })
-              ] })
-            ] })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pin, { p: pins[2], pos: "pin-pos-hero" })
-        ] })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { id: "prompt-stack", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { id: "review-banner", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "banner-round", children: "R1" }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: "banner-text", children: [
-            "CTA hierarchy + hero spacing reworked \u2014 check pin ",
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("b", { children: "1" }),
-            ", price baseline in ",
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("b", { children: "2" }),
-            "."
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "mini-card" })
           ] })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { id: "prompt-bar", children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { id: "prompt-input-row", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "prompt-caret", children: "\u203A" }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-            "input",
-            {
-              className: "prompt-input",
-              defaultValue: "CTA hierarchy + hero spacing reworked; CTA is the only filled element now.",
-              "aria-label": "describe the change"
-            }
-          ),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { id: "send-back", title: "send back (\u23CE)", "aria-label": "send back", children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", { width: "15", height: "15", viewBox: "0 0 16 16", "aria-hidden": "true", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M2.5 7.6L13.5 2.4l-3.8 11.2-2.5-4.7-4.7-1.3z", fill: "currentColor" }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M13.5 2.4L7.2 8.9", stroke: "#232a26", strokeWidth: "1" })
-          ] }) })
-        ] }) })
+        ] })
       ] })
     ] }) }),
     /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("footer", { id: "statusline", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "sl-seg sl-seg-accent", children: "REVIEW" }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "sl-seg", children: "round 1 \xB7 2 pages picked \xB7 3 comments" }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "sl-seg sl-seg-accent sl-seg-accent-view", children: "INTERACT" }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "sl-seg", children: "viewing r3 \xB7 read-only" }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "sl-spring" }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: "sl-seg sl-hint", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("b", { children: "\u23CE" }),
-        " send back"
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: "sl-seg sl-hint", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("b", { children: "esc" }),
-        " cancel pick"
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: "sl-seg sl-hint", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("b", { children: "P" }),
-        " pick element"
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("b", { children: "A" }),
+        " annotate"
       ] })
     ] })
   ] });
 }
 
-// .forge/entry-a.mjs
-(0, import_client.createRoot)(document.getElementById("root")).render(import_react.default.createElement(A));
+// .forge/entry-a-interact.mjs
+(0, import_client.createRoot)(document.getElementById("root")).render(import_react.default.createElement(AInteract));
 /*! Bundled license information:
 
 scheduler/cjs/scheduler.production.js:

@@ -4,6 +4,7 @@
 // (picks, exports, captures).
 
 import { useEffect, useRef } from "react";
+import { CanvasErrorBoundary } from "./canvas-error-boundary";
 import { Tldraw, createShapeId, track, useEditor, type Editor } from "tldraw";
 import type { WorldMock } from "./types";
 import { CommentPinShapeUtil, MockPageShapeUtil } from "./shapes";
@@ -66,28 +67,32 @@ function syncFrames(editor: Editor, mock: WorldMock) {
 const FrameSync = track(function FrameSync({ mock }: { mock: WorldMock }) {
 	const editor = useEditor();
 	const lastPages = useRef("");
-	const key = mock.pages.join(",");
-	if (lastPages.current !== key) {
-		lastPages.current = key;
-		syncFrames(editor, mock);
-	}
+	useEffect(() => {
+		const key = mock.pages.join(",");
+		if (lastPages.current !== key) {
+			lastPages.current = key;
+			syncFrames(editor, mock);
+		}
+	}, [editor, mock]);
 	return null;
 });
 
 function MockCanvasInner({ mock }: { mock: WorldMock }) {
 	return (
-		<Tldraw
-			shapeUtils={[MockPageShapeUtil, CommentPinShapeUtil]}
-			persistenceKey={`forge-${mock.id}`}
-			onMount={(editor) => {
-				editors.set(mock.id, editor);
-				return () => {
-					editors.delete(mock.id);
-				};
-			}}
-		>
-			<FrameSync mock={mock} />
-		</Tldraw>
+		<CanvasErrorBoundary label={`canvas ${mock.id}`}>
+			<Tldraw
+				shapeUtils={[MockPageShapeUtil, CommentPinShapeUtil]}
+				persistenceKey={`forge-${mock.id}`}
+				onMount={(editor) => {
+					editors.set(mock.id, editor);
+					return () => {
+						editors.delete(mock.id);
+					};
+				}}
+			>
+				<FrameSync mock={mock} />
+			</Tldraw>
+		</CanvasErrorBoundary>
 	);
 }
 
