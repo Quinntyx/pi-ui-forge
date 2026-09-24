@@ -48,7 +48,8 @@
 .glass-text { font-size: 12px; line-height: 1.55; color: rgba(255, 255, 255, 0.9); margin: 0; }
 .glass-text a { color: #eaf3ff; text-decoration: underline; }
 
-/* pin positions */
-.pin-glass-nav { left: 100px; top: 58px; }
-.pin-glass-hero { right: 104px; top: 186px; }
-.pin-glass-row { right: 104px; top: 368px; }
+/* pins — anchored to their target elements inside the card */
+.glass-nav, .glass-hero, .glass-row { position: relative; }
+.pin-glass-nav { top: -9px; right: 4px; }
+.pin-glass-hero { top: 12px; right: 12px; }
+.pin-glass-row { top: 12px; right: 12px; }

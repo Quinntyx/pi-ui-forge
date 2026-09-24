@@ -1,3 +1,4 @@
+import { useState } from "react";
 import "../pages/a.css";
 import WikiMock from "./wiki";
 import GlassMock from "./glass";
@@ -13,7 +14,7 @@ const designs = [
 ];
 
 const tools = [
-	{ id: "select", active: true, title: "Select (V)", d: "M4.5 2.5v11l3-2.6 1.8 3.8 2.3-1.1-1.8-3.7h4l-9.3-7.4z" },
+	{ id: "select", active: false, title: "Select (V)", d: "M4.5 2.5v11l3-2.6 1.8 3.8 2.3-1.1-1.8-3.7h4l-9.3-7.4z" },
 	{ id: "hand", active: false, title: "Hand (H)", d: "M6 8V4.4a.9.9 0 0 1 1.8 0V8m0-2.6a.9.9 0 0 1 1.8 0V8m0-1.4a.9.9 0 0 1 1.8 0V9m0-.6a.9.9 0 0 1 1.8 0v2.4c0 2.3-1.8 4-4.2 4-2 0-3-.8-4.2-2.6L4.3 10c-.5-.7.4-1.6 1.1-1l.6.5z" },
 	{ id: "draw", active: false, title: "Draw (D)", d: "M3 13.5l1-3.2 7-7 2.2 2.2-7 7-3.2 1zM10.2 4.1l2.2 2.2" },
 	{ id: "eraser", active: false, title: "Eraser (E)", d: "M6.5 13.5H13M4.2 11.6l4.2-4.2 3.4 3.4-2.5 2.5H6.7l-2.5-2.5.9-.9 4.4-4.4 3.4 3.4" },
@@ -25,9 +26,22 @@ const tools = [
 	{ id: "frame", active: false, title: "Frame (F)", d: "M4 2v12M12 2v12M2 4h12M2 12h12" },
 ];
 
-const swatches = ["grey", "red", "orange", "yellow", "green", "aqua", "blue", "purple"];
+// tldraw-exact 2×5 palette, reskinned to Everforest
+const tldColors = [
+	{ id: "bone", v: "#d3c6aa" },
+	{ id: "grey", v: "#859289" },
+	{ id: "ink", v: "#272e33" },
+	{ id: "purple", v: "#d699b6" },
+	{ id: "red", v: "#e67e80" },
+	{ id: "orange", v: "#e69875" },
+	{ id: "yellow", v: "#dbbc7f" },
+	{ id: "green", v: "#a7c080" },
+	{ id: "aqua", v: "#83c092" },
+	{ id: "blue", v: "#7fbbb3" },
+];
 
 export default function Chrome({ design, state }: { design: Design; state: State }) {
+	const [light, setLight] = useState(false);
 	const annotate = state === "annotate";
 	const interact = state === "interact";
 	const Mock = design === "wiki" ? WikiMock : design === "glass" ? GlassMock : BrutalMock;
@@ -36,7 +50,7 @@ export default function Chrome({ design, state }: { design: Design; state: State
 	const label = state === "work" ? `${dname} · r3 → r4` : `${dname} · r3`;
 
 	return (
-		<div className="app">
+		<div className={`app ${light ? "light" : ""}`}>
 			<header id="topbar">
 				<nav id="tabs">
 					{designs.map((d, i) => (
@@ -46,6 +60,15 @@ export default function Chrome({ design, state }: { design: Design; state: State
 					))}
 				</nav>
 				<div className="topbar-spring" />
+				<button id="theme-toggle" title={light ? "switch to dark" : "switch to light"} aria-label="toggle theme" onClick={() => setLight(!light)}>
+					<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+						{light ? (
+							<path d="M8 2.2v2M8 11.8v2M2.2 8h2M11.8 8h2M4.1 4.1l1.4 1.4M10.5 10.5l1.4 1.4M11.9 4.1l-1.4 1.4M5.5 10.5l-1.4 1.4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+						) : (
+							<path d="M12.5 9.5A5.5 5.5 0 0 1 6.5 3.5a5.5 5.5 0 1 0 6 6z" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+						)}
+					</svg>
+				</button>
 				{interact ? (
 					<div id="mode-toggle" role="group" aria-label="mode">
 						<span className="mode-key mode-key-modeI-active">I</span><span className="mode-label mode-label-active">interact</span>
@@ -58,15 +81,6 @@ export default function Chrome({ design, state }: { design: Design; state: State
 							<span className="mode-key">I</span><span className="mode-label">interact</span>
 							<span className="mode-sep">/</span>
 							<span className="mode-key mode-key-active">A</span><span className="mode-label mode-label-active">annotate</span>
-						</div>
-						<div id="pick-control" title="pick element">
-							<button id="pick-btn" className={state === "work" ? "pick-btn-dim" : ""} disabled={state === "work"} aria-label="pick element (P)">
-								<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-									<rect x="7" y="7" width="7" height="7" fill="none" stroke="currentColor" strokeWidth="1.3" />
-									<path d="M2.5 1.5v9.6l2.8-2.4 1.6 3.5 2-1-1.6-3.4h3.4z" fill="currentColor" />
-								</svg>
-							</button>
-							<span className="mode-key">P</span>
 						</div>
 						{annotate && <button id="topbar-approve">approve</button>}
 					</>
@@ -83,7 +97,17 @@ export default function Chrome({ design, state }: { design: Design; state: State
 
 					{!interact && (
 						<>
-							<div id="tool-dock" role="toolbar" aria-label="tools">
+							<div id="dock-stack">
+								<div id="pick-panel" title="pick element (P) — cancels the selected tldraw tool" aria-label="pick element">
+									<button id="pick-btn" className={annotate ? "pick-btn-on" : state === "work" ? "pick-btn-dim" : ""} disabled={state === "work"} aria-label="pick element (P)">
+										<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+											<rect x="7" y="7" width="7" height="7" fill="none" stroke="currentColor" strokeWidth="1.3" />
+											<path d="M2.5 1.5v9.6l2.8-2.4 1.6 3.5 2-1-1.6-3.4h3.4z" fill="currentColor" />
+										</svg>
+									</button>
+									<span className="mode-key">P</span>
+								</div>
+								<div id="tool-dock" role="toolbar" aria-label="tools">
 								{tools.map((t) => (
 									<button key={t.id} className={`tool ${t.active ? "tool-active" : ""}`} title={t.title} aria-label={t.title}>
 										<svg width="17" height="17" viewBox="0 0 16 16" aria-hidden="true">
@@ -91,53 +115,36 @@ export default function Chrome({ design, state }: { design: Design; state: State
 										</svg>
 									</button>
 								))}
+								</div>
 							</div>
 
 							<div id="style-panel" aria-label="style">
-								<div className="sp-section" id="sp-fill">
-									<span className="sp-icon"><svg width="12" height="12" viewBox="0 0 16 16"><path d="M8 2C5.4 5.6 3.8 7.8 3.8 10a4.2 4.2 0 0 0 8.4 0C12.2 7.8 10.6 5.6 8 2z" fill="none" stroke="currentColor" strokeWidth="1.3" /></svg></span>
-									<div className="sp-grid">
-										<button className="sp-cell" title="fill none"><span className="sp-glyph" style={{ width: 10, height: 10, border: "1px solid currentColor", display: "block" }} /></button>
-										<button className="sp-cell" title="fill half"><span className="sp-glyph" style={{ width: 10, height: 10, border: "1px solid currentColor", background: "linear-gradient(135deg, transparent 50%, currentColor 50%)", display: "block" }} /></button>
-										<button className="sp-cell" title="fill solid"><span className="sp-glyph" style={{ width: 10, height: 10, background: "currentColor", display: "block" }} /></button>
-									</div>
+								<div className="sp-colors" id="sp-color">
+									{tldColors.map((c) => (
+										<button key={c.id} className={`sw ${c.id === "orange" ? "sw-on" : ""}`} title={c.id} style={{ background: c.v }} aria-label={c.id} />
+									))}
 								</div>
-								<div className="sp-section" id="sp-dash">
-									<span className="sp-icon"><svg width="12" height="12" viewBox="0 0 16 16"><path d="M2 4h4M9 4h5M2 11h5M10 11h4" stroke="currentColor" strokeWidth="1.4" /></svg></span>
-									<div className="sp-grid">
-										<button className="sp-cell" title="solid"><span style={{ width: 12, borderTop: "2px solid currentColor", display: "block" }} /></button>
-										<button className="sp-cell" title="dashed"><span style={{ width: 12, borderTop: "2px dashed currentColor", display: "block" }} /></button>
-										<button className="sp-cell" title="dotted"><span style={{ width: 12, borderTop: "2px dotted currentColor", display: "block" }} /></button>
-										<button className="sp-cell" title="drawn"><span style={{ width: 12, borderTop: "2px dotted currentColor", opacity: 0.6, display: "block" }} /></button>
-									</div>
+								<div className="sp-slider-row" id="sp-opacity" title="opacity">
+									<span className="sp-slider-fill" />
+									<span className="sp-slider-thumb" />
 								</div>
-								<div className="sp-section" id="sp-font">
-									<span className="sp-icon"><svg width="12" height="12" viewBox="0 0 16 16"><path d="M2 3.5h12M6.5 3.5v9M9.5 3.5v9" stroke="currentColor" strokeWidth="1.3" /></svg></span>
-									<div className="sp-grid">
-										<button className="sp-cell sp-cell-active" title="draw" style={{ fontFamily: "cursive" }}><span style={{ fontSize: 11 }}>Aa</span></button>
-										<button className="sp-cell" title="sans" style={{ fontFamily: "Helvetica, sans-serif" }}><span style={{ fontSize: 11 }}>Aa</span></button>
-										<button className="sp-cell" title="serif" style={{ fontFamily: "Georgia, serif" }}><span style={{ fontSize: 11 }}>Aa</span></button>
-										<button className="sp-cell" title="mono" style={{ fontFamily: "monospace" }}><span style={{ fontSize: 11 }}>Aa</span></button>
-									</div>
+								<div className="sp-cells" id="sp-dash">
+									<button className="sp-cell sp-cell-active" title="dash solid"><span className="d-solid" /></button>
+									<button className="sp-cell" title="dash dashed"><span className="d-dashed" /></button>
+									<button className="sp-cell" title="dash dotted"><span className="d-dotted" /></button>
+									<button className="sp-cell" title="dash mixed"><span className="d-mixed" /></button>
 								</div>
-								<div className="sp-section" id="sp-size">
-									<span className="sp-icon"><svg width="12" height="12" viewBox="0 0 16 16"><path d="M2 8h12M5 5L2 8l3 3M11 5l3 3-3 3" fill="none" stroke="currentColor" strokeWidth="1.2" /></svg></span>
-									<div className="sp-grid">
-										<button className="sp-cell" title="S"><span className="sp-size-s">S</span></button>
-										<button className="sp-cell" title="M"><span className="sp-size-m">M</span></button>
-										<button className="sp-cell sp-cell-active" title="L"><span className="sp-size-l">L</span></button>
-										<button className="sp-cell" title="XL"><span className="sp-size-xl">XL</span></button>
-									</div>
+								<div className="sp-cells" id="sp-fill">
+									<button className="sp-cell" title="fill none"><span className="g-none" /></button>
+									<button className="sp-cell" title="fill half"><span className="g-half" /></button>
+									<button className="sp-cell" title="fill solid"><span className="g-full" /></button>
+									<button className="sp-cell sp-cell-active" title="fill pattern"><span className="g-hatch" /></button>
 								</div>
-								<div className="sp-section" id="sp-color">
-									<span className="sp-icon"><svg width="12" height="12" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5" fill="none" stroke="currentColor" strokeWidth="1.3" /><path d="M8 2.5v11a5.5 5.5 0 0 0 0-11z" fill="currentColor" /></svg></span>
-									<div className="sp-grid sp-grid-2">
-										{swatches.map((c) => (
-											<button key={c} className={`sp-cell ${c === "orange" ? "sp-cell-active" : ""}`} title={c}>
-												<span className={`sp-swatch sw-${c}`}>{c === "orange" ? "✓" : ""}</span>
-											</button>
-										))}
-									</div>
+								<div className="sp-cells" id="sp-size">
+									<button className="sp-cell" title="size S"><span className="sp-size-s">S</span></button>
+									<button className="sp-cell" title="size M"><span className="sp-size-m">M</span></button>
+									<button className="sp-cell sp-cell-active" title="size L"><span className="sp-size-l">L</span></button>
+									<button className="sp-cell" title="size XL"><span className="sp-size-xl">XL</span></button>
 								</div>
 							</div>
 						</>

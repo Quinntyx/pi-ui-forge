@@ -90,6 +90,19 @@ export function removeComment(commentId: string): void {
 	setState({ comments: remaining });
 }
 
+
+/** Clear all annotations after a send-back: pins, drawings, notes, sidebar state. */
+export function clearAllAnnotations(): void {
+	for (const [canvasId, editor] of editors) {
+		const ids = [...editor.getCurrentPageShapeIds()].filter((id) => {
+			const shape = editor.getShape(id);
+			return !!shape && shape.type !== "mock-page";
+		});
+		if (ids.length) editor.deleteShapes(ids);
+	}
+	setState({ comments: [], description: "", picked: [] });
+}
+
 export function highlight(page: string | null, selector: string | null, on: boolean): void {
 	if (!page || !selector) return;
 	const iframe = document.querySelector(

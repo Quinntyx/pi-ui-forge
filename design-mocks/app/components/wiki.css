@@ -76,7 +76,8 @@
 }
 .wiki-catbar a { color: #3366cc; text-decoration: none; }
 
-/* pin positions on the article */
-.pin-wiki-ib { right: 8px; top: 216px; }
-.pin-wiki-h2 { left: 214px; top: 400px; }
-.pin-wiki-lead { left: 545px; top: 126px; }
+/* pins — anchored to their target elements */
+.wiki-lead, .wiki-h2, .wiki-ib-img { position: relative; }
+.pin-wiki-ib { top: 8px; right: 8px; }
+.pin-wiki-h2 { right: 8px; top: -1px; }
+.pin-wiki-lead { right: 4px; top: -8px; }

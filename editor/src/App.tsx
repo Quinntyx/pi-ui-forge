@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import "./app.css";
 import { MockCanvas, usePickListener, type PickMessage } from "./canvas";
-import { addCommentFromPick, setMode, setPickMode, highlight, removeComment } from "./annotate";
+import { addCommentFromPick, setMode, setPickMode, highlight, removeComment, clearAllAnnotations } from "./annotate";
 import { buildSendBack } from "./sendback";
 import { connect, onMessage, send } from "./ws";
 import { getState, setState, useSyncState } from "./store";
@@ -156,6 +156,9 @@ function ReviewSidebar({ canvasId }: { canvasId: string }) {
 		try {
 			const payload = await buildSendBack(state.reviewId, approved);
 			send({ type: "send-back", reviewId: state.reviewId, approved, payload });
+			// the markup is consumed feedback — reset the canvas and sidebar so the
+			// next round starts clean (annotations do not carry across revisions)
+			clearAllAnnotations();
 		} finally {
 			setBusy(false);
 		}

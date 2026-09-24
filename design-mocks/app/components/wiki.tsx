@@ -36,6 +36,7 @@ export default function WikiMock({ variant = "plain", label }: {
 					The <b>Selkirk grackle</b> (<i>Gracula selkirki</i>) is a <a>passerine</a> bird in the family <a>Graulidae</a>. It is
 					endemic to the <a>Selkirk archipelago</a>, where it breeds in coastal scrub and feeds mainly on <a>molluscs</a> and
 					beach flies.
+					{review && <Pin p={pins[2]} />}
 				</p>
 				<div className="wiki-layout">
 					<div className="wiki-main">
@@ -61,7 +62,7 @@ export default function WikiMock({ variant = "plain", label }: {
 							Measuring 28 cm, it is smaller and darker than its mainland relatives, with a heavy black bill and a
 							down-curved culmen. The plumage is sooty brown with a faint green gloss on the mantle.
 						</p>
-						<h2 className="wiki-h2" id="Behaviour">Behaviour</h2>
+						<h2 className="wiki-h2" id="Behaviour">Behaviour{review && <Pin p={pins[1]} />}</h2>
 						<p className="wiki-text">
 							It forages at low tide along rocky ledges, flipping kelp to expose crustaceans, and nests colonially on
 							cliff ledges between August and November.
@@ -69,7 +70,7 @@ export default function WikiMock({ variant = "plain", label }: {
 					</div>
 					<aside className="wiki-infobox">
 						<div className="wiki-ib-title">Selkirk grackle</div>
-						<div className="wiki-ib-img" />
+						<div className="wiki-ib-img">{review && <Pin p={pins[0]} />}</div>
 						<div className="wiki-ib-cap">Adult, Selkirk Island</div>
 						<div className="wiki-ib-row"><b>Family</b><span>Graulidae</span></div>
 						<div className="wiki-ib-row"><b>Genus</b><span>Gracula</span></div>
@@ -77,8 +78,6 @@ export default function WikiMock({ variant = "plain", label }: {
 					</aside>
 				</div>
 				<div className="wiki-catbar">Categories: <a>Graulidae</a> | <a>Birds of the Selkirk Islands</a> | <a>Endemic fauna</a></div>
-
-				{review && pins.map((p) => <Pin key={p.n} p={p} />)}
 			</div>
 		</div>
 	);

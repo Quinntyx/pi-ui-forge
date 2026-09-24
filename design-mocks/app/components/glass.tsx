@@ -32,6 +32,7 @@ export default function GlassMock({ variant = "plain", label }: {
 							<span className="glass-pill glass-pill-on">Discover</span>
 							<span className="glass-pill">Library</span>
 							<span className="glass-pill">Guides</span>
+							{review && <Pin p={pins[2]} />}
 						</div>
 						{variant === "annotate" && (
 							<div id="comment-pop" style={{ left: 8 }}>
@@ -47,19 +48,18 @@ export default function GlassMock({ variant = "plain", label }: {
 						<h1 className="glass-title">Selkirk Grackle</h1>
 						<p className="glass-sub">Field guide · Birds of the Selkirk archipelago</p>
 					</div>
-					<div className="glass-hero" />
+					<div className="glass-hero">{review && <Pin p={pins[0]} />}</div>
 					<div className="glass-row">
 						<div className="glass-tile"><b>28 cm</b><span>Wingspan</span></div>
 						<div className="glass-tile"><b>4–5</b><span>Clutch size</span></div>
 						<div className="glass-tile"><b>NT</b><span>Conservation</span></div>
+						{review && <Pin p={pins[1]} />}
 					</div>
 					<p className="glass-text">
 						A <a>coastal passerine</a> that forages at low tide, flipping kelp for crustaceans. Nests colonially on
 						cliff ledges between August and November.
 					</p>
 				</div>
-
-				{review && pins.map((p) => <Pin key={p.n} p={p} />)}
 			</div>
 		</div>
 	);
