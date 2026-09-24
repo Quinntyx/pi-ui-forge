@@ -38,6 +38,15 @@ result = await h                  # resolves when the user approves or closes th
   for as long as the user is marking up the mock. That is the loop working,
   not a hang. Pass a generous `wait_async` timeout (4+ hours) or poll
   `h.status`.
+- **Context lifecycle — the subagent is disposable.** Design rounds
+  accumulate images in the subagent's context (review canvas shots,
+  screenshot reads) and providers cap request size — long sessions start
+  failing with 4xx errors (413/400). Watch the context row in the viewer
+  (`h.state()`): at roughly **25% or after ~15 review rounds**, finish that
+  subagent and spawn a fresh one from the SAME mock folder — it resumes
+  from `design-notes.md` (the design contract) and `app/`, which carry all
+  state. Never treat the subagent's memory as the source of truth; the
+  contract file is.
 - Do not spawn extra agents to "help" the design loop; the alternation is
   user-driven and single-threaded.
 - You may keep working in your own session meanwhile; the design subagent is
