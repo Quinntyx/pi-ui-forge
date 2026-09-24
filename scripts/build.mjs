@@ -110,6 +110,9 @@ for (const name of allPages) {
 	writeFileSync(join(outDir, name, "index.html"), pageHtml(name, existsSync(join(outDir, name, "bundle.css"))));
 	const hash = createHash("sha256")
 		.update(readFileSync(join(outDir, name, "bundle.js")))
+		// CSS is part of the page identity: a CSS-only rebuild must produce a new
+		// hash or the editor's hot-swap reload never fires (stale-styles trap).
+		.update(existsSync(join(outDir, name, "bundle.css")) ? readFileSync(join(outDir, name, "bundle.css")) : Buffer.alloc(0))
 		.digest("hex")
 		.slice(0, 12);
 	manifest.pages.push({ name, hash });

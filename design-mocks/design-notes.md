@@ -23,6 +23,15 @@ theme (Everforest dark-medium, JetBrains Mono) around a tldraw-style canvas.
 - Bottom statusline replaces any status pill: accent segment signals state —
   green `REVIEW` / orange `WORKING` / blue `INTERACT` — plus round/page/
   comment counts and right-aligned key hints. No app identity, no version.
+- NO topbar tabs: designs are PROPOSAL OPTIONS, not persistent tabs. They
+  render as a squared tab-style strip (`#design-options`: 0 encyclopedia /
+  1 liquid glass / 2 brutalist + "⏎ continue with <name>" hint) attached
+  above the prompt input — old `.tab` look (square, green top-inset on the
+  active one), NOT pills. Only on turns proposing multiple mocks; enter
+  commits the selected one and the rest are hidden (code lingers for
+  porting elements).
+- Topbar layout: interact/annotate mode toggle on the LEFT; theme toggle +
+  approve on the right.
 - Themes: everforest light-medium (DEFAULT on state pages) + dark-medium via
   working sun/moon `#theme-toggle` left of the mode toggle (one useState —
   the only interactive state in the mock). All chrome colors are CSS vars
@@ -32,15 +41,28 @@ theme (Everforest dark-medium, JetBrains Mono) around a tldraw-style canvas.
   blue opacity slider (thumb right), fill row (tldraw stacked-sheet icons),
   dash row (tldraw circle icons: solid/dashed/dotted/thin), S/M/L/XL size row
   (L active, blue ring). Panel shell squared-off (0 radius) per theme.
-- Popup comment editor (`#comment-pop`) opens CENTERED above the picked
-  element, arrow down — same geometry as the hover pin tooltips
-  (`.pop-anchor` is width: fit-content for this).
-- Pick-element is NOT a tldraw tool: it lives in its own floating panel
-  (`#pick-panel`) above the tool dock in a shared `#dock-stack` (10px gap).
-  Armed (orange) in annotate — which deselects any tldraw tool; hidden while
-  working (nothing pickable); removed from the topbar.
+- Annotate canvas is two-up: the picked design full-size with a dashed blue
+  `frame-selected` outline, the next design as a dimmed 0.45-scale ghost
+  frame to its LEFT (`frame-ghost`, slot + transform-scale — zoom is
+  unreliable in the renderer). Main page must keep ≥130px left margin so the
+  popup (centered over the badge) never clips.
+- Comment popup editor (`#comment-pop`) is CENTERED above the number badge
+  (`left: -125px` of the pop-anchor; arrow at 120px) and shows the target
+  selector line (`.pop-sel`, like the pin hover tooltips). The badge stays
+  pinned at the TOC's top-left corner — its final submitted spot.
+- `#send-back` glyph nudged 1px down (padding-top 1px).
+- Pick-element floats SEPARATELY from the tool dock (its own `#pick-panel`
+  above the dock in `#dock-stack`), but styled like a dock tool: one border
+  layer (the panel shell), 30px icon-only button, 17px icon. Armed
+  (orange `pick-btn-on`) in annotate; present but disabled/grayed in work,
+  plain in interact.
+  Picking cancels the selected tldraw tool and vice versa.
+- Tool dock AND pick button are disabled (real `disabled` attr, grayed) in
+  the work state; pick panel + dock render in ALL three states.
 - Work state shows ONLY the progress bar (banner dropped as redundant):
   spinner + "revising <design> — <detail>" + meta line.
+- `#send-back` glyph nudged DOWN (padding-top 3px) — earlier nudge went the
+  wrong way.
 
 ## Key decisions
 - Single shared `Chrome` component (`app/components/chrome.tsx`) + three
@@ -64,8 +86,11 @@ theme (Everforest dark-medium, JetBrains Mono) around a tldraw-style canvas.
 - Drawing crops can still arrive image:null — typed comment text + the
   whole-canvas image are reliable; zoom the canvas jpg for placed reference
   images.
-- a-interact offscreen captures rendered clipped once (r25); a rebuild +
-  solo canvas fixed it (r27).
+- The offscreen screenshot cache is keyed by page name AND can serve stale
+  renders after relabels (r34/r35 identical); diff against an older shot to
+  detect staleness, then bump data-build + relabel + rebuild until fresh.
+- The capture viewport is ~1284 CSS px (1400px image at ~1.09 scale) —
+  two 760px frames don't fit side by side at full size.
 
 ## Open items (current round)
 1. Full frame labels — applied + verified r28: every frame shows

@@ -48,13 +48,16 @@ export default function WikiMock({ variant = "plain", label }: {
 								<div><span className="toc-n">3</span><a>Taxonomy</a></div>
 							</div>
 							{variant === "annotate" && (
-								<div id="comment-pop">
-									<span className="pin c-blue">4</span>
-									<span className="pop-main">
-										<input className="pop-input" defaultValue="TOC rows misaligned by 2px" aria-label="new comment" autoFocus />
-										<div className="pop-hint"><b>⏎</b> finalize comment · <b>esc</b> cancel</div>
-									</span>
-								</div>
+								<>
+									<span className="pin-wrap pin-wiki-toc"><span className="pin c-blue">4</span></span>
+									<div id="comment-pop">
+										<span className="pop-main">
+											<code className="pop-sel">.wiki-toc</code>
+											<input className="pop-input" defaultValue="TOC rows misaligned by 2px" aria-label="new comment" autoFocus />
+											<div className="pop-hint"><b>⏎</b> finalize comment · <b>esc</b> cancel</div>
+										</span>
+									</div>
+								</>
 							)}
 						</div>
 						<h2 className="wiki-h2">Description</h2>

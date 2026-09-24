@@ -27,7 +27,7 @@
 	--fg: #5c6a72; --faint: #939f91; --grey: #a6b0a0;
 	--red: #f85552; --orange: #f57d26; --yellow: #dfa000;
 	--green: #8da101; --aqua: #35a77c; --blue: #3a94c5; --purple: #df69ba;
-	--bar: #f1ebd5; --line: #e2dab9; --grid: #e9e2c6;
+	--bar: #f1ebd5; --line: #e2dab9; --grid: #f0ead7;
 	--pin-text: #fdf6e3;
 	--pick-bg: #f6e3d2; --pick-bg-hover: #f0d6bc;
 	--banner: #e9e3c5;
@@ -76,16 +76,18 @@
 .mode-sep { color: var(--bg3); }
 
 #pick-btn {
-	width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
-	border: 1px solid var(--bg3); background: transparent; color: var(--faint);
-	border-radius: 3px; cursor: pointer;
+	width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+	background: transparent; color: var(--faint);
+	border: none; border-radius: 4px; cursor: pointer; padding: 0;
 }
 #pick-btn:hover { background: var(--bg2); color: var(--fg); }
-.pick-btn-on { border-color: var(--orange); background: var(--pick-bg); color: var(--orange); }
-.pick-btn-on:hover { background: var(--pick-bg-hover); color: var(--orange); }
-.pick-btn-dim { opacity: 0.45; cursor: default; pointer-events: none; }
+.pick-btn-on { background: var(--orange); color: var(--pin-text); }
+.pick-btn-on:hover { background: var(--orange); color: var(--pin-text); }
+#pick-btn:disabled { opacity: 0.4; cursor: default; background: transparent; color: var(--faint); }
+#pick-btn:disabled:hover { background: transparent; color: var(--faint); }
 
 /* approve — moved to the topbar corner (was in the prompt bar) */
+.topbar-right { display: flex; align-items: center; gap: 7px; }
 #topbar-approve {
 	font: inherit; font-size: 11px; color: var(--faint);
 	background: transparent; border: 1px solid var(--bg3);
@@ -98,9 +100,9 @@
 
 /* light/dark theme switcher — left of the mode toggle */
 #theme-toggle {
-	width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+	display: flex; align-items: center; justify-content: center;
 	background: transparent; border: 1px solid var(--bg3); border-radius: 3px;
-	color: var(--faint); cursor: pointer; padding: 0;
+	color: var(--faint); cursor: pointer; padding: 4px;
 }
 #theme-toggle:hover { color: var(--fg); background: var(--bg2); }
 
@@ -111,8 +113,8 @@
 	flex: 1; min-width: 0; position: relative; overflow: hidden;
 	background: var(--bg0);
 	background-image:
-		linear-gradient(#2a3238 1px, transparent 1px),
-		linear-gradient(90deg, #2a3238 1px, transparent 1px);
+		linear-gradient(var(--grid) 1px, transparent 1px),
+		linear-gradient(90deg, var(--grid) 1px, transparent 1px);
 	background-size: 24px 24px;
 }
 /* content scrolls here; floating chrome anchors to #canvas-area (the viewport) */
@@ -135,7 +137,9 @@
 	padding: 12px; display: flex; flex-direction: column; gap: 9px;
 	box-shadow: 4px 4px 0 var(--shadow);
 }
-.frame-selected { outline: 1px dashed var(--blue); outline-offset: 4px; }
+.frame-selected { display: block; outline: 1px dashed var(--blue); outline-offset: 4px; }
+.frame-ghost { display: block; width: 342px; height: 276px; }
+.frame-ghost .frame { transform: scale(0.45); transform-origin: top left; opacity: 0.55; }
 
 .mini-topbar { display: flex; align-items: center; gap: 4px; margin-bottom: 2px; }
 .mini-dot { width: 6px; height: 6px; background: var(--bg3); }
@@ -195,15 +199,16 @@
 
 /* ── popup comment editor — appears above the pick, styled like the tooltip ── */
 .pop-anchor { position: relative; width: fit-content; }
+.pin-wiki-toc { top: -9px; left: -9px; }
 #comment-pop {
-	position: absolute; bottom: calc(100% + 9px); left: 50%; transform: translateX(-50%);
+	position: absolute; bottom: calc(100% + 9px); left: -125px;
 	width: 250px; z-index: 45; text-align: left;
 	background: var(--bar); border: 1px solid var(--bg3);
 	box-shadow: 3px 3px 0 var(--shadow);
 	padding: 6px 9px; display: flex; gap: 8px; align-items: flex-start;
 }
 #comment-pop::after {
-	content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+	content: ""; position: absolute; top: 100%; left: 120px;
 	border: 5px solid transparent; border-top-color: var(--bg3);
 }
 .pop-main { flex: 1; min-width: 0; }
@@ -224,9 +229,9 @@
 /* pick-element lives in its own floating panel — a forge tool, not a tldraw
    tool: picking cancels the selected tldraw tool and vice versa */
 #pick-panel {
-	display: flex; flex-direction: column; align-items: center; gap: 5px;
+	display: flex; align-items: center; justify-content: center;
 	background: var(--bg1); border: 1px solid var(--bg3);
-	padding: 6px 5px; box-shadow: 4px 4px 0 var(--shadow);
+	padding: 5px; box-shadow: 4px 4px 0 var(--shadow);
 }
 #tool-dock {
 	display: flex; flex-direction: column; gap: 2px;
@@ -240,6 +245,9 @@
 }
 .tool:hover { background: var(--bg2); color: var(--fg); }
 .tool-active { background: var(--bg3); color: var(--fg); box-shadow: inset 0 0 0 1px var(--green); }
+.tool:disabled { opacity: 0.4; cursor: default; }
+.tool:disabled:hover { background: transparent; color: var(--faint); }
+.tool:disabled.tool-active { background: var(--bg3); color: var(--fg); box-shadow: inset 0 0 0 1px var(--bg3); }
 .tool-dim { opacity: 0.45; pointer-events: none; }
 
 /* ── tldraw style modal — exact tldraw built-in, reskinned to Everforest ── */
@@ -331,6 +339,25 @@
 .banner-text b { color: var(--yellow); }
 
 #prompt-bar { background: var(--bg1); border: 1px solid var(--bg3); }
+#design-options {
+	display: flex; align-items: center;
+	padding: 0 10px 0 0;
+	border-bottom: 1px solid var(--line);
+}
+.do-chip {
+	display: inline-flex; align-items: center; gap: 7px;
+	font: inherit; font-size: 11px; color: var(--faint);
+	background: transparent; border: none; border-right: 1px solid var(--line);
+	padding: 3px 12px; cursor: pointer; border-radius: 0;
+}
+.do-chip:first-child { border-left: none; }
+.do-chip:hover { color: var(--fg); }
+.do-chip-on { background: var(--bg1); color: var(--fg); box-shadow: inset 0 -2px 0 var(--green); }
+.do-idx { font-size: 10px; color: var(--grey); }
+.do-chip-on .do-idx { color: var(--green); }
+.do-hint { font-size: 9.5px; color: var(--grey); margin-left: auto; padding-right: 2px; }
+.do-hint b { color: var(--faint); font-weight: 600; }
+.pop-sel { display: block; color: var(--aqua); font-size: 10px; margin-bottom: 2px; }
 #prompt-input-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px 8px 12px; }
 .prompt-caret { color: var(--green); font-weight: 700; }
 .prompt-input {
@@ -346,7 +373,7 @@
 	display: flex; align-items: center; justify-content: center;
 	border: 1px solid var(--green-edge); background: var(--green); color: var(--green-ink);
 	cursor: pointer; font: inherit; font-size: 15px; font-weight: 700;
-	padding: 0 0 4px;
+	padding: 1px 0 0;
 }
 #send-back:hover { background: var(--green-bright); }
 

@@ -68,16 +68,25 @@ export default function Chrome({ design, state }: { design: Design; state: State
 	const label = state === "work" ? `${dname} · r3 → r4` : `${dname} · r3`;
 
 	return (
-		<div className={`app ${light ? "light" : ""}`} data-build="r27">
+		<div className={`app ${light ? "light" : ""}`} data-build="r50">
 			<header id="topbar">
-				<nav id="tabs">
-					{designs.map((d, i) => (
-						<button key={d.id} className={`tab ${d.id === design ? "tab-active" : ""}`}>
-							<span className="tab-idx">{i}</span>{d.name}
-						</button>
-					))}
-				</nav>
+				<div id="mode-toggle" role="group" aria-label="mode">
+					{interact ? (
+						<>
+							<span className="mode-key mode-key-modeI-active">I</span><span className="mode-label mode-label-active">interact</span>
+							<span className="mode-sep">/</span>
+							<span className="mode-key">A</span><span className="mode-label">annotate</span>
+						</>
+					) : (
+						<>
+							<span className="mode-key">I</span><span className="mode-label">interact</span>
+							<span className="mode-sep">/</span>
+							<span className="mode-key mode-key-active">A</span><span className="mode-label mode-label-active">annotate</span>
+						</>
+					)}
+				</div>
 				<div className="topbar-spring" />
+				<div className="topbar-right">
 				<button id="theme-toggle" title={light ? "switch to dark" : "switch to light"} aria-label="toggle theme" onClick={() => setLight(!light)}>
 					<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
 						{light ? (
@@ -87,58 +96,50 @@ export default function Chrome({ design, state }: { design: Design; state: State
 						)}
 					</svg>
 				</button>
-				{interact ? (
-					<div id="mode-toggle" role="group" aria-label="mode">
-						<span className="mode-key mode-key-modeI-active">I</span><span className="mode-label mode-label-active">interact</span>
-						<span className="mode-sep">/</span>
-						<span className="mode-key">A</span><span className="mode-label">annotate</span>
-					</div>
-				) : (
-					<>
-						<div id="mode-toggle" role="group" aria-label="mode">
-							<span className="mode-key">I</span><span className="mode-label">interact</span>
-							<span className="mode-sep">/</span>
-							<span className="mode-key mode-key-active">A</span><span className="mode-label mode-label-active">annotate</span>
-						</div>
-						{annotate && <button id="topbar-approve">approve</button>}
-					</>
-				)}
+				{annotate && <button id="topbar-approve">approve</button>}
+				</div>
 			</header>
 
 			<main id="workspace">
 				<section id="canvas-area">
 					<div id="canvas-scroll">
 						<div className="canvas-content">
-							<Mock variant={mockVariant} label={label} />
+							{annotate && (() => {
+								const next = designs[(designs.findIndex((d) => d.id === design) + 1) % designs.length];
+								const NextMock = next.id === "wiki" ? WikiMock : next.id === "glass" ? GlassMock : BrutalMock;
+								return (
+									<span className="frame-ghost">
+										<NextMock variant="plain" label={`${next.name} · r3`} />
+									</span>
+								);
+							})()}
+							<span className={annotate ? "frame-selected" : undefined}>
+								<Mock variant={mockVariant} label={label} />
+							</span>
 						</div>
 					</div>
 
-					{!interact && (
-						<>
-							<div id="dock-stack">
-								{annotate && (
-									<div id="pick-panel" title="pick element (P) — cancels the selected tldraw tool" aria-label="pick element">
-										<button id="pick-btn" className="pick-btn-on" aria-label="pick element (P)">
-											<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-												<rect x="7" y="7" width="7" height="7" fill="none" stroke="currentColor" strokeWidth="1.3" />
-												<path d="M2.5 1.5v9.6l2.8-2.4 1.6 3.5 2-1-1.6-3.4h3.4z" fill="currentColor" />
-											</svg>
-										</button>
-										<span className="mode-key">P</span>
-									</div>
-								)}
-								<div id="tool-dock" role="toolbar" aria-label="tools">
-								{tools.map((t) => (
-									<button key={t.id} className={`tool ${t.id === "select" && state === "work" ? "tool-active" : ""}`} title={t.title} aria-label={t.title}>
-										<svg width="17" height="17" viewBox="0 0 16 16" aria-hidden="true">
-											<path d={t.d} fill={t.id === "select" ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-										</svg>
-									</button>
-								))}
-								</div>
-							</div>
-
-							<div id="style-panel" aria-label="style">
+					<div id="dock-stack">
+					<div id="pick-panel" title="pick element (P) — cancels the selected tldraw tool" aria-label="pick element">
+						<button id="pick-btn" disabled={state === "work"} className={annotate ? "pick-btn-on" : ""} aria-label="pick element (P)">
+							<svg width="17" height="17" viewBox="0 0 16 16" aria-hidden="true">
+								<rect x="7" y="7" width="7" height="7" fill="none" stroke="currentColor" strokeWidth="1.3" />
+								<path d="M2.5 1.5v9.6l2.8-2.4 1.6 3.5 2-1-1.6-3.4h3.4z" fill="currentColor" />
+							</svg>
+						</button>
+					</div>
+					<div id="tool-dock" role="toolbar" aria-label="tools" aria-disabled={state === "work"}>
+					{tools.map((t) => (
+						<button key={t.id} disabled={state === "work"} className={`tool ${t.id === "select" && state === "work" ? "tool-active" : ""}`} title={t.title} aria-label={t.title}>
+							<svg width="17" height="17" viewBox="0 0 16 16" aria-hidden="true">
+								<path d={t.d} fill={t.id === "select" ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+							</svg>
+						</button>
+					))}
+					</div>
+				</div>
+				{!interact && (
+<div id="style-panel" aria-label="style">
 								<div className="sp-colors" id="sp-color">
 									{tldColors.map((c) => (
 										<button key={c} className={`sw k-${c}${c === "orange" ? " sw-on" : ""}`} title={c} aria-label={c} />
@@ -167,8 +168,7 @@ export default function Chrome({ design, state }: { design: Design; state: State
 									<button className="sp-cell" title="size XL"><span className="sp-size-xl">XL</span></button>
 								</div>
 							</div>
-						</>
-					)}
+											)}
 
 					{annotate && (
 						<div id="prompt-stack">
@@ -179,6 +179,15 @@ export default function Chrome({ design, state }: { design: Design; state: State
 								</span>
 							</div>
 							<div id="prompt-bar">
+								<div id="design-options" role="radiogroup" aria-label="proposed designs">
+									{designs.map((d, i) => (
+										<button key={d.id} className={`do-chip ${d.id === design ? "do-chip-on" : ""}`} aria-pressed={d.id === design}>
+											<span className="do-idx">{i}</span>{d.name}
+										</button>
+									))}
+									<span className="do-hint"><b>⏎</b> continue with {designs.find((d) => d.id === design)?.name}</span>
+								</div>
+								
 								<div id="prompt-input-row">
 									<span className="prompt-caret">›</span>
 									<input

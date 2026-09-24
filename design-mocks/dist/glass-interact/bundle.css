@@ -62,7 +62,7 @@
   --purple: #df69ba;
   --bar: #f1ebd5;
   --line: #e2dab9;
-  --grid: #e9e2c6;
+  --grid: #f0ead7;
   --pin-text: #fdf6e3;
   --pick-bg: #f6e3d2;
   --pick-bg-hover: #f0d6bc;
@@ -180,34 +180,44 @@
   color: var(--bg3);
 }
 #pick-btn {
-  width: 26px;
-  height: 26px;
+  width: 30px;
+  height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--bg3);
   background: transparent;
   color: var(--faint);
-  border-radius: 3px;
+  border: none;
+  border-radius: 4px;
   cursor: pointer;
+  padding: 0;
 }
 #pick-btn:hover {
   background: var(--bg2);
   color: var(--fg);
 }
 .pick-btn-on {
-  border-color: var(--orange);
-  background: var(--pick-bg);
-  color: var(--orange);
+  background: var(--orange);
+  color: var(--pin-text);
 }
 .pick-btn-on:hover {
-  background: var(--pick-bg-hover);
-  color: var(--orange);
+  background: var(--orange);
+  color: var(--pin-text);
 }
-.pick-btn-dim {
-  opacity: 0.45;
+#pick-btn:disabled {
+  opacity: 0.4;
   cursor: default;
-  pointer-events: none;
+  background: transparent;
+  color: var(--faint);
+}
+#pick-btn:disabled:hover {
+  background: transparent;
+  color: var(--faint);
+}
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 7px;
 }
 #topbar-approve {
   font: inherit;
@@ -230,8 +240,6 @@
   color: #4a3f25;
 }
 #theme-toggle {
-  width: 26px;
-  height: 26px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -240,7 +248,7 @@
   border-radius: 3px;
   color: var(--faint);
   cursor: pointer;
-  padding: 0;
+  padding: 4px;
 }
 #theme-toggle:hover {
   color: var(--fg);
@@ -258,10 +266,10 @@
   overflow: hidden;
   background: var(--bg0);
   background-image:
-    linear-gradient(#2a3238 1px, transparent 1px),
+    linear-gradient(var(--grid) 1px, transparent 1px),
     linear-gradient(
       90deg,
-      #2a3238 1px,
+      var(--grid) 1px,
       transparent 1px);
   background-size: 24px 24px;
 }
@@ -310,8 +318,19 @@
   box-shadow: 4px 4px 0 var(--shadow);
 }
 .frame-selected {
+  display: block;
   outline: 1px dashed var(--blue);
   outline-offset: 4px;
+}
+.frame-ghost {
+  display: block;
+  width: 342px;
+  height: 276px;
+}
+.frame-ghost .frame {
+  transform: scale(0.45);
+  transform-origin: top left;
+  opacity: 0.55;
 }
 .mini-topbar {
   display: flex;
@@ -475,11 +494,14 @@
   position: relative;
   width: fit-content;
 }
+.pin-wiki-toc {
+  top: -9px;
+  left: -9px;
+}
 #comment-pop {
   position: absolute;
   bottom: calc(100% + 9px);
-  left: 50%;
-  transform: translateX(-50%);
+  left: -125px;
   width: 250px;
   z-index: 45;
   text-align: left;
@@ -495,8 +517,7 @@
   content: "";
   position: absolute;
   top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 120px;
   border: 5px solid transparent;
   border-top-color: var(--bg3);
 }
@@ -540,12 +561,11 @@
 }
 #pick-panel {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 5px;
+  justify-content: center;
   background: var(--bg1);
   border: 1px solid var(--bg3);
-  padding: 6px 5px;
+  padding: 5px;
   box-shadow: 4px 4px 0 var(--shadow);
 }
 #tool-dock {
@@ -578,6 +598,19 @@
   background: var(--bg3);
   color: var(--fg);
   box-shadow: inset 0 0 0 1px var(--green);
+}
+.tool:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.tool:disabled:hover {
+  background: transparent;
+  color: var(--faint);
+}
+.tool:disabled.tool-active {
+  background: var(--bg3);
+  color: var(--fg);
+  box-shadow: inset 0 0 0 1px var(--bg3);
 }
 .tool-dim {
   opacity: 0.45;
@@ -808,6 +841,60 @@
   background: var(--bg1);
   border: 1px solid var(--bg3);
 }
+#design-options {
+  display: flex;
+  align-items: center;
+  padding: 0 10px 0 0;
+  border-bottom: 1px solid var(--line);
+}
+.do-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font: inherit;
+  font-size: 11px;
+  color: var(--faint);
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--line);
+  padding: 3px 12px;
+  cursor: pointer;
+  border-radius: 0;
+}
+.do-chip:first-child {
+  border-left: none;
+}
+.do-chip:hover {
+  color: var(--fg);
+}
+.do-chip-on {
+  background: var(--bg1);
+  color: var(--fg);
+  box-shadow: inset 0 -2px 0 var(--green);
+}
+.do-idx {
+  font-size: 10px;
+  color: var(--grey);
+}
+.do-chip-on .do-idx {
+  color: var(--green);
+}
+.do-hint {
+  font-size: 9.5px;
+  color: var(--grey);
+  margin-left: auto;
+  padding-right: 2px;
+}
+.do-hint b {
+  color: var(--faint);
+  font-weight: 600;
+}
+.pop-sel {
+  display: block;
+  color: var(--aqua);
+  font-size: 10px;
+  margin-bottom: 2px;
+}
 #prompt-input-row {
   display: flex;
   align-items: center;
@@ -847,7 +934,7 @@
   font: inherit;
   font-size: 15px;
   font-weight: 700;
-  padding: 0 0 4px;
+  padding: 1px 0 0;
 }
 #send-back:hover {
   background: var(--green-bright);

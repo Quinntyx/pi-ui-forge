@@ -1,17 +1,17 @@
 {
-  "builtAt": "2026-09-24T07:15:55.374Z",
+  "builtAt": "2026-09-24T08:12:35.534Z",
   "pages": [
     {
       "name": "a-interact",
-      "hash": "1e86dd06b482"
+      "hash": "284ba56c2484"
     },
     {
       "name": "a-work",
-      "hash": "d7522739649d"
+      "hash": "6a650b67ef8f"
     },
     {
       "name": "a",
-      "hash": "88395ef5114f"
+      "hash": "b68217ecabec"
     },
     {
       "name": "b",
@@ -19,15 +19,15 @@
     },
     {
       "name": "brutal-interact",
-      "hash": "1f6a9c78123c"
+      "hash": "dcae04c64e3c"
     },
     {
       "name": "brutal-work",
-      "hash": "00d75fb5edab"
+      "hash": "5750a404b7a8"
     },
     {
       "name": "brutal",
-      "hash": "c3235fbe11ff"
+      "hash": "fbc9c2a70fdd"
     },
     {
       "name": "c",
@@ -35,15 +35,15 @@
     },
     {
       "name": "glass-interact",
-      "hash": "de16d8da28a4"
+      "hash": "fc533b6b7bd5"
     },
     {
       "name": "glass-work",
-      "hash": "d158da117c18"
+      "hash": "7f128144cbdb"
     },
     {
       "name": "glass",
-      "hash": "30609e7f1adb"
+      "hash": "07a7f2222289"
     }
   ]
 }

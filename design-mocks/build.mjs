@@ -110,6 +110,7 @@ for (const name of allPages) {
 	writeFileSync(join(outDir, name, "index.html"), pageHtml(name, existsSync(join(outDir, name, "bundle.css"))));
 	const hash = createHash("sha256")
 		.update(readFileSync(join(outDir, name, "bundle.js")))
+		.update(existsSync(join(outDir, name, "bundle.css")) ? readFileSync(join(outDir, name, "bundle.css")) : Buffer.alloc(0))
 		.digest("hex")
 		.slice(0, 12);
 	manifest.pages.push({ name, hash });

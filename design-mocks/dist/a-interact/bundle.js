@@ -14644,9 +14644,10 @@ function WikiMock({ variant = "plain", label }) {
                 /* @__PURE__ */ (0, import_jsx_runtime.jsx)("a", { children: "Taxonomy" })
               ] })
             ] }),
-            variant === "annotate" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { id: "comment-pop", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "pin c-blue", children: "4" }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: "pop-main", children: [
+            variant === "annotate" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "pin-wrap pin-wiki-toc", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "pin c-blue", children: "4" }) }),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { id: "comment-pop", children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: "pop-main", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("code", { className: "pop-sel", children: ".wiki-toc" }),
                 /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", { className: "pop-input", defaultValue: "TOC rows misaligned by 2px", "aria-label": "new comment", autoFocus: true }),
                 /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "pop-hint", children: [
                   /* @__PURE__ */ (0, import_jsx_runtime.jsx)("b", { children: "\u23CE" }),
@@ -14654,7 +14655,7 @@ function WikiMock({ variant = "plain", label }) {
                   /* @__PURE__ */ (0, import_jsx_runtime.jsx)("b", { children: "esc" }),
                   " cancel"
                 ] })
-              ] })
+              ] }) })
             ] })
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", { className: "wiki-h2", children: "Description" }),
@@ -14898,68 +14899,66 @@ function Chrome({ design, state }) {
   const mockVariant = annotate ? "annotate" : state === "work" ? "work" : "plain";
   const dname = designs.find((d) => d.id === design)?.name ?? design;
   const label = state === "work" ? `${dname} \xB7 r3 \u2192 r4` : `${dname} \xB7 r3`;
-  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: `app ${light ? "light" : ""}`, "data-build": "r27", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: `app ${light ? "light" : ""}`, "data-build": "r50", children: [
     /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("header", { id: "topbar", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("nav", { id: "tabs", children: designs.map((d, i) => /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("button", { className: `tab ${d.id === design ? "tab-active" : ""}`, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "tab-idx", children: i }),
-        d.name
-      ] }, d.id)) }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "topbar-spring" }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { id: "theme-toggle", title: light ? "switch to dark" : "switch to light", "aria-label": "toggle theme", onClick: () => setLight(!light), children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 16 16", "aria-hidden": "true", children: light ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("path", { d: "M8 2.2v2M8 11.8v2M2.2 8h2M11.8 8h2M4.1 4.1l1.4 1.4M10.5 10.5l1.4 1.4M11.9 4.1l-1.4 1.4M5.5 10.5l-1.4 1.4", stroke: "currentColor", strokeWidth: "1.4", strokeLinecap: "round" }) : /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("path", { d: "M12.5 9.5A5.5 5.5 0 0 1 6.5 3.5a5.5 5.5 0 1 0 6 6z", fill: "none", stroke: "currentColor", strokeWidth: "1.4", strokeLinejoin: "round" }) }) }),
-      interact ? /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { id: "mode-toggle", role: "group", "aria-label": "mode", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { id: "mode-toggle", role: "group", "aria-label": "mode", children: interact ? /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
         /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mode-key mode-key-modeI-active", children: "I" }),
         /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mode-label mode-label-active", children: "interact" }),
         /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mode-sep", children: "/" }),
         /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mode-key", children: "A" }),
         /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mode-label", children: "annotate" })
       ] }) : /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { id: "mode-toggle", role: "group", "aria-label": "mode", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mode-key", children: "I" }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mode-label", children: "interact" }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mode-sep", children: "/" }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mode-key mode-key-active", children: "A" }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mode-label mode-label-active", children: "annotate" })
-        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mode-key", children: "I" }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mode-label", children: "interact" }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mode-sep", children: "/" }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mode-key mode-key-active", children: "A" }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mode-label mode-label-active", children: "annotate" })
+      ] }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "topbar-spring" }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "topbar-right", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { id: "theme-toggle", title: light ? "switch to dark" : "switch to light", "aria-label": "toggle theme", onClick: () => setLight(!light), children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 16 16", "aria-hidden": "true", children: light ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("path", { d: "M8 2.2v2M8 11.8v2M2.2 8h2M11.8 8h2M4.1 4.1l1.4 1.4M10.5 10.5l1.4 1.4M11.9 4.1l-1.4 1.4M5.5 10.5l-1.4 1.4", stroke: "currentColor", strokeWidth: "1.4", strokeLinecap: "round" }) : /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("path", { d: "M12.5 9.5A5.5 5.5 0 0 1 6.5 3.5a5.5 5.5 0 1 0 6 6z", fill: "none", stroke: "currentColor", strokeWidth: "1.4", strokeLinejoin: "round" }) }) }),
         annotate && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { id: "topbar-approve", children: "approve" })
       ] })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("main", { id: "workspace", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("section", { id: "canvas-area", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { id: "canvas-scroll", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "canvas-content", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Mock, { variant: mockVariant, label }) }) }),
-      !interact && /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { id: "dock-stack", children: [
-          annotate && /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { id: "pick-panel", title: "pick element (P) \u2014 cancels the selected tldraw tool", "aria-label": "pick element", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { id: "pick-btn", className: "pick-btn-on", "aria-label": "pick element (P)", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("svg", { width: "16", height: "16", viewBox: "0 0 16 16", "aria-hidden": "true", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("rect", { x: "7", y: "7", width: "7", height: "7", fill: "none", stroke: "currentColor", strokeWidth: "1.3" }),
-              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("path", { d: "M2.5 1.5v9.6l2.8-2.4 1.6 3.5 2-1-1.6-3.4h3.4z", fill: "currentColor" })
-            ] }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "mode-key", children: "P" })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { id: "tool-dock", role: "toolbar", "aria-label": "tools", children: tools.map((t) => /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { className: `tool ${t.id === "select" && state === "work" ? "tool-active" : ""}`, title: t.title, "aria-label": t.title, children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("svg", { width: "17", height: "17", viewBox: "0 0 16 16", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("path", { d: t.d, fill: t.id === "select" ? "currentColor" : "none", stroke: "currentColor", strokeWidth: "1.3", strokeLinecap: "round", strokeLinejoin: "round" }) }) }, t.id)) })
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { id: "canvas-scroll", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "canvas-content", children: [
+        annotate && (() => {
+          const next = designs[(designs.findIndex((d) => d.id === design) + 1) % designs.length];
+          const NextMock = next.id === "wiki" ? WikiMock : next.id === "glass" ? GlassMock : BrutalMock;
+          return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "frame-ghost", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(NextMock, { variant: "plain", label: `${next.name} \xB7 r3` }) });
+        })(),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: annotate ? "frame-selected" : void 0, children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Mock, { variant: mockVariant, label }) })
+      ] }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { id: "dock-stack", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { id: "pick-panel", title: "pick element (P) \u2014 cancels the selected tldraw tool", "aria-label": "pick element", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { id: "pick-btn", disabled: state === "work", className: annotate ? "pick-btn-on" : "", "aria-label": "pick element (P)", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("svg", { width: "17", height: "17", viewBox: "0 0 16 16", "aria-hidden": "true", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("rect", { x: "7", y: "7", width: "7", height: "7", fill: "none", stroke: "currentColor", strokeWidth: "1.3" }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("path", { d: "M2.5 1.5v9.6l2.8-2.4 1.6 3.5 2-1-1.6-3.4h3.4z", fill: "currentColor" })
+        ] }) }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { id: "tool-dock", role: "toolbar", "aria-label": "tools", "aria-disabled": state === "work", children: tools.map((t) => /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { disabled: state === "work", className: `tool ${t.id === "select" && state === "work" ? "tool-active" : ""}`, title: t.title, "aria-label": t.title, children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("svg", { width: "17", height: "17", viewBox: "0 0 16 16", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("path", { d: t.d, fill: t.id === "select" ? "currentColor" : "none", stroke: "currentColor", strokeWidth: "1.3", strokeLinecap: "round", strokeLinejoin: "round" }) }) }, t.id)) })
+      ] }),
+      !interact && /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { id: "style-panel", "aria-label": "style", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "sp-colors", id: "sp-color", children: tldColors.map((c) => /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { className: `sw k-${c}${c === "orange" ? " sw-on" : ""}`, title: c, "aria-label": c }, c)) }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "sp-slider-row", id: "sp-opacity", title: "opacity", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "sp-slider-fill" }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "sp-slider-thumb" })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { id: "style-panel", "aria-label": "style", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "sp-colors", id: "sp-color", children: tldColors.map((c) => /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { className: `sw k-${c}${c === "orange" ? " sw-on" : ""}`, title: c, "aria-label": c }, c)) }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "sp-slider-row", id: "sp-opacity", title: "opacity", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "sp-slider-fill" }),
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "sp-slider-thumb" })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "sp-cells", id: "sp-fill", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { className: "sp-cell", title: "fill none", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(FillIcon, { kind: "none" }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { className: "sp-cell", title: "fill half", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(FillIcon, { kind: "half" }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { className: "sp-cell sp-cell-active", title: "fill solid", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(FillIcon, { kind: "full" }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { className: "sp-cell", title: "fill pattern", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(FillIcon, { kind: "pattern" }) })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "sp-cells", id: "sp-dash", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { className: "sp-cell sp-cell-active", title: "dash solid", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(DashIcon, { kind: "solid" }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { className: "sp-cell", title: "dash dashed", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(DashIcon, { kind: "dashed" }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { className: "sp-cell", title: "dash dotted", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(DashIcon, { kind: "dotted" }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { className: "sp-cell", title: "dash thin", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(DashIcon, { kind: "thin" }) })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "sp-cells", id: "sp-size", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { className: "sp-cell", title: "size S", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "sp-size-s", children: "S" }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { className: "sp-cell", title: "size M", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "sp-size-m", children: "M" }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { className: "sp-cell sp-cell-active", title: "size L", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "sp-size-l", children: "L" }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { className: "sp-cell", title: "size XL", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "sp-size-xl", children: "XL" }) })
-          ] })
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "sp-cells", id: "sp-fill", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { className: "sp-cell", title: "fill none", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(FillIcon, { kind: "none" }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { className: "sp-cell", title: "fill half", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(FillIcon, { kind: "half" }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { className: "sp-cell sp-cell-active", title: "fill solid", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(FillIcon, { kind: "full" }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { className: "sp-cell", title: "fill pattern", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(FillIcon, { kind: "pattern" }) })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "sp-cells", id: "sp-dash", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { className: "sp-cell sp-cell-active", title: "dash solid", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(DashIcon, { kind: "solid" }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { className: "sp-cell", title: "dash dashed", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(DashIcon, { kind: "dashed" }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { className: "sp-cell", title: "dash dotted", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(DashIcon, { kind: "dotted" }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { className: "sp-cell", title: "dash thin", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(DashIcon, { kind: "thin" }) })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "sp-cells", id: "sp-size", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { className: "sp-cell", title: "size S", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "sp-size-s", children: "S" }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { className: "sp-cell", title: "size M", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "sp-size-m", children: "M" }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { className: "sp-cell sp-cell-active", title: "size L", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "sp-size-l", children: "L" }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { className: "sp-cell", title: "size XL", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "sp-size-xl", children: "XL" }) })
         ] })
       ] }),
       annotate && /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { id: "prompt-stack", children: [
@@ -14973,18 +14972,31 @@ function Chrome({ design, state }) {
             ")."
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { id: "prompt-bar", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { id: "prompt-input-row", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "prompt-caret", children: "\u203A" }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
-            "input",
-            {
-              className: "prompt-input",
-              defaultValue: "Switched the mock to a light theme; image crop is 4:3 now.",
-              "aria-label": "describe the change"
-            }
-          ),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { id: "send-back", title: "send back (\u23CE)", "aria-label": "send back", children: "\u23CE" })
-        ] }) })
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { id: "prompt-bar", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { id: "design-options", role: "radiogroup", "aria-label": "proposed designs", children: [
+            designs.map((d, i) => /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("button", { className: `do-chip ${d.id === design ? "do-chip-on" : ""}`, "aria-pressed": d.id === design, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "do-idx", children: i }),
+              d.name
+            ] }, d.id)),
+            /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("span", { className: "do-hint", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("b", { children: "\u23CE" }),
+              " continue with ",
+              designs.find((d) => d.id === design)?.name
+            ] })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { id: "prompt-input-row", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "prompt-caret", children: "\u203A" }),
+            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+              "input",
+              {
+                className: "prompt-input",
+                defaultValue: "Switched the mock to a light theme; image crop is 4:3 now.",
+                "aria-label": "describe the change"
+              }
+            ),
+            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { id: "send-back", title: "send back (\u23CE)", "aria-label": "send back", children: "\u23CE" })
+          ] })
+        ] })
       ] }),
       state === "work" && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { id: "prompt-stack", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { id: "progress-bar", children: [
         /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "progress-head", children: [
