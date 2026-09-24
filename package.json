@@ -12,7 +12,8 @@
       "./index.ts"
     ],
     "skills": [
-      "./skills"
+      "./skills",
+      "!./skills/ui-mock"
     ]
   },
   "scripts": {
