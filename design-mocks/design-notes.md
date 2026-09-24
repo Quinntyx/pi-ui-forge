@@ -1,4 +1,15 @@
-# Editor chrome — design contract (converged)
+# Editor chrome — design contract (converged, FINAL r28)
+
+Status: converged and approved (twice — initial and resumed session, both
+closed with zero markup). This file is the hand-off contract; replicate from
+it and the renders below.
+
+## Verified renders (final)
+- shots/r3/a.jpg — annotate state, wiki (`encyclopedia · r3`)
+- shots/r4/a-work.jpg — working state (`encyclopedia · r3 → r4`)
+- shots/r2/a-interact.jpg — interact state
+- shots/r5/glass.jpg — glass design, annotate (pin anchor verification)
+- shots/r6/brutal.jpg — brutalist design, annotate (pin anchor verification)
 
 ## End state
 A pi-ui-forge editor-chrome mock: dense, tmux/vim-flavored "Statusline Console"
@@ -79,9 +90,7 @@ theme (Everforest dark-medium, JetBrains Mono) around a tldraw-style canvas.
   `#review-banner`, `#prompt-bar`, `#send-back`, `#progress-bar`,
   `#statusline`, `#comment-pop`, `.pop-target`.
 
-## APPROVED — final summary (round 14 / build r51)
-
-Editor chrome, everforest light-medium default + working theme toggle.
+## APPROVED — final layout specification (build r51, data r52)
 
 - Topbar: mode toggle (interact/annotate, key badges) LEFT; `.topbar-right`
   (theme sun/moon + approve, 7px gap) RIGHT; bar padding 0 7px 0 10px.
@@ -101,35 +110,12 @@ Editor chrome, everforest light-medium default + working theme toggle.
 
 Final page images: shots/r52/a.jpg, shots/r52/a-work.jpg,
 shots/r52/a-interact.jpg (canvas: shots/r52/canvas.jpg).
+Resumed-session review canvas: shots/r4/canvas.jpg.
 
-## Pipeline gotchas (current)
-- mock_build only builds; the GUI updates on mock_review. mock_screenshot
-  renders OFFSCREEN (fresh, works for undisplayed pages).
-- The editor hot-swap hash covers bundle.js ONLY — CSS-only rebuilds do NOT
-  hot-swap GUI iframes (stale-css trap; offscreen screenshots are immune).
-  Force a reload by touching the TSX (any JS change) or renaming the canvas.
-- Drawing crops can still arrive image:null — typed comment text + the
-  whole-canvas image are reliable; zoom the canvas jpg for placed reference
-  images.
-- The offscreen screenshot cache is keyed by page name AND can serve stale
-  renders after relabels (r34/r35 identical); diff against an older shot to
-  detect staleness, then bump data-build + relabel + rebuild until fresh.
-- The capture viewport is ~1284 CSS px (1400px image at ~1.09 scale) —
-  two 760px frames don't fit side by side at full size.
-
-## Open items (current round)
-1. Full frame labels — applied + verified r28: every frame shows
-   `design name · revision` (`encyclopedia · r3`; working state shows
-   `encyclopedia · r3 → r4`).
-2. Pin anchoring — applied + verified r28: pins are children of their target
-   elements (wiki: infobox image / Behaviour h2 / lead paragraph; glass: nav /
-   hero / stat row; brutal: index-card image / BEHAVIOUR button / headline),
-   so they can never drift outside the card or hide behind the popup comment
-   editor. Popup comment editor anchors correctly on wiki (TOC) and glass
-   (active pill) with down-arrow + finalize/cancel hints.
-
-## Session gotcha (r28, fresh subagent)
-- mock_screenshot saves only ONE page per call in this environment — request
-   pages solo ("[\"a\"]") and read each path; batched requests silently save
-   just the first page. Old shots/r1..r7 dirs contain stale files from a
-   reset round counter — trust file mtimes, not the round number.
+## Pin anchoring (verified)
+Pins are children of their target elements (wiki: infobox image / Behaviour
+h2 / lead paragraph; glass: nav / hero / stat row; brutal: index-card image
+/ BEHAVIOUR button / headline), so they can never drift outside the card or
+hide behind the popup comment editor. Popup comment editor anchors correctly
+on wiki (TOC) and glass (active pill) with down-arrow + finalize/cancel
+hints.
