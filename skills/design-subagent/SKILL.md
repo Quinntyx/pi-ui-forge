@@ -41,34 +41,78 @@ tool result.
 - `mock_review` — **blocking**: flips the GUI to annotate mode and does not
   return until the user sends markup, approves, or closes the window
 
-## `design-notes.md` is a contract, not a journal
+## `design-notes.md` — maintained during, finalized before you return
 
-The caller reads this file once, at the end, and replicates the design from
-it. It must describe the **current end state of the UI** — never the process.
-Structure (keep it under ~60 lines):
+While iterating, keep `design-notes.md` as the current design end state (see
+the finalize pass below for the exact structure). When a round changes
+something, edit the relevant lines in place — never append new sections.
+Per-round state lives in your working memory and the session log, not here.
+
+## The finalize pass (before every settled return to the caller)
+
+Before you settle — i.e. right before your final response that hands control
+back to the calling agent — run the finalize pass. It is a **wholesale
+rewrite**: build `design-notes.md` from scratch from the template, merging in
+whatever of the old file is still true. Never patch the old file in place
+during finalize; rebuilding is the only guarantee against leaked history.
+
+### Required final structure
 
 ```markdown
 # Design contract: <what was designed>
 
+Status: converged and approved. Hand-off contract — replicate from this file
+and the renders below.
+
+## Verified renders (final)
+- shots/<path>.jpg — <what it shows>
+
 ## End state
-<The final UI: layout, chrome, states, interactions — what a developer must
-implement. Updated in place every round; never append round narratives.>
+<The final UI, in full: layout, chrome, every state, interactions, spacing
+values, key hints — everything a developer must implement. The largest
+section; every line must carry design information.>
 
 ## Key decisions
 - <one line each: what was chosen and why>
 
-## Reference renders
-- shots/r<last>/<page>.png — <what it shows>
+## Implementation spec (verified)
+<Measurements, component structure, anchoring/behaviour you verified
+offscreen — e.g. exact panel sizes, pin anchoring rules.>
 
 ## Open items
-- <only what is genuinely unresolved>
+- <only what is genuinely unresolved; delete this section if empty>
 ```
 
-Forbidden in this file: per-round debugging narratives, internal plugin bug
-notes, stale gotchas, blow-by-blow review history. When a round changes
-something, edit the relevant lines in place; do not append a new section.
-Per-round state lives in your own working memory and the session log, not
-here.
+### What must be removed in the finalize pass
+
+Delete every line that does not help a developer replicate the design.
+Categories seen in real leaks (all forbidden):
+
+- **Pipeline / plugin notes** — anything about how the tools behave
+  (`mock_build` GUI semantics, screenshot caching, hot-swap traps,
+  capture-viewport sizes). That is the plugin's business; if a fact matters
+  to the design itself, fold the fact into the End state or spec section
+  without mentioning the plugin.
+- **Session narratives** — "resumed session approved again", "last review
+  window closed with no markup", "round N feedback received/applied".
+  Approval belongs in the Status line, at most.
+- **Stale-file archaeology** — warnings about stale shots, reset round
+  counters, "trust mtimes", "bump data-build until fresh". Just reference
+  renders that are correct; don't document the mess.
+- **Internal bug/debug notes** — anything about editor crashes, workarounds
+  you used, or plugin bugs you reported.
+- **Build/round metadata** — round counters, `data-build`/revision numbers
+  EXCEPT when they are part of a render path.
+- **Superseded sections** — old variant descriptions, resolved open items as
+  narrative (fold verified outcomes into the relevant spec lines instead).
+
+### Final self-check
+
+After rewriting, re-read the file top to bottom and apply one test to every
+line: *"would a developer replicating this design need this line?"* If not,
+delete it. If any line explains why something was hard, mentions rounds, the
+editor, the plugin, or how you felt about the process — delete it. The file
+should read as if written by the designer in one sitting at the end.
 
 ## Speed rules (explicit)
 
@@ -104,10 +148,10 @@ here.
 4. **`mock_review` is the only handover.** When it returns, act on exactly
    that feedback (picked pages, description, comments with selectors, draw
    crops), rebuild, and call `mock_review` again. The user approving or
-   closing the window ends the session: rewrite `design-notes.md` as the
-   final **design contract** (structure below — no process narrative) and
-   settle with a concise summary pointing at it and the final page image
-   paths. The caller gets a clean contract, not a replay of rounds.
+   closing the window ends the session: run the **finalize pass** (wholesale
+   rewrite of `design-notes.md` per the structure above) and settle with a
+   one-paragraph summary pointing at the contract file and the final render
+   paths. The caller gets a clean pointer, not a replay.
 5. **Alternation discipline.** Never loop autonomously across review rounds;
    each round is driven by real user feedback. Never call `mock_review` with
    a red build — build first; the user never sees mid-edit states.
@@ -118,6 +162,6 @@ here.
    is the truth) and the latest `shots/` renders before your next build or
    review.
 7. **Context insulation.** The caller receives only your settled response —
-   make it the clean design contract (end-state description + reference
-   image paths), not a replay of rounds, debugging notes, or stale gotchas.
-   Per-round narratives stay in your session, never in `design-notes.md`.
+   a pointer to the contract plus one short paragraph, not a design dump.
+   All detail lives in `design-notes.md`; the caller reads the file, not
+   your transcript.
