@@ -1,15 +1,28 @@
 import { useEffect, useState } from "react";
-import "./app.css";
-import { MockCanvas, usePickListener, type PickMessage } from "./canvas";
-import { addCommentFromPick, setMode, setPickMode, highlight, removeComment, clearAllAnnotations } from "./annotate";
+import "./forge.css";
+import { MockCanvas, editors, usePickListener, type PickMessage } from "./canvas";
+import {
+	addCommentFromPick,
+	setMode,
+	setPickMode,
+	highlight,
+	removeComment,
+	clearAllAnnotations,
+	finalizePopup,
+	cancelPopup,
+} from "./annotate";
 import { buildSendBack } from "./sendback";
 import { connect, onMessage, send } from "./ws";
 import { getState, setState, useSyncState } from "./store";
 import { applyPageHashes } from "./hashes";
+import { CommentPop, DockStack, ProgressBar, PromptStack, StatusLine, StylePanel, TopBar } from "./chrome";
 import type { World } from "./types";
+import type { Editor } from "tldraw";
 
 export default function App() {
 	const state = useSyncState();
+	const [busy, setBusy] = useState(false);
+	const [, force] = useState(0);
 
 	// wire server messages → app state
 	useEffect(() => {
@@ -30,7 +43,6 @@ export default function App() {
 					break;
 				case "review-end":
 					setState({ phase: "idle" });
-					setMode("interact");
 					break;
 				case "session-closed":
 					setState({ phase: "closed" });
@@ -45,95 +57,122 @@ export default function App() {
 		};
 	}, []);
 
-const handlePick = (msg: PickMessage) => {
-	try {
-		const id = addCommentFromPick(msg);
-		if (id === null) {
-			console.error("[forge-editor] pick dropped: no matching frame/editor", msg);
-		}
-	} catch (error) {
-		// never let a pick crash the whole editor (tldraw error screen softlocks)
-		console.error("[forge-editor] pick handler failed", msg, error);
-	}
-};
+	// keep the popup positioned when the camera moves
+	const activeEditor = state.activeCanvas ? (editors.get(state.activeCanvas) ?? null) : null;
+	useEffect(() => {
+		if (!activeEditor) return;
+		return activeEditor.store.listen(() => force((n) => n + 1), { scope: "document" });
+	}, [activeEditor]);
 
+	const handlePick = (msg: PickMessage) => {
+		try {
+			if (addCommentFromPick(msg) === null) {
+				console.error("[forge-editor] pick dropped: no matching frame/editor", msg);
+			}
+		} catch (error) {
+			console.error("[forge-editor] pick handler failed", msg, error);
+		}
+	};
 	usePickListener(handlePick);
 
-	const active = state.world.mocks.find((m) => m.id === state.activeCanvas) ?? null;
+	// keyboard: I interact, A annotate, P pick, Enter send/commit, Esc cancel
+	useEffect(() => {
+		const onKey = (e: KeyboardEvent) => {
+			const target = e.target as HTMLElement | null;
+			const typing = target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA");
+			if (e.key === "Escape") {
+				if (getState().popup) cancelPopup();
+				else if (getState().pickMode) setPickMode(false);
+				return;
+			}
+			if (typing) return;
+			if (e.key === "i" || e.key === "I") setMode("interact");
+			if (e.key === "a" || e.key === "A") setMode("annotate");
+			if (e.key === "p" || e.key === "P") {
+				const on = !getState().pickMode;
+				setPickMode(on);
+				if (on && activeEditor) activeEditor.setCurrentTool("select");
+			}
+		};
+		window.addEventListener("keydown", onKey);
+		return () => window.removeEventListener("keydown", onKey);
+	}, [activeEditor]);
+
+	const doSend = async () => {
+		setBusy(true);
+		try {
+			const payload = await buildSendBack(getState().reviewId, false);
+			send({ type: "send-back", reviewId: getState().reviewId, approved: false, payload });
+			clearAllAnnotations();
+		} finally {
+			setBusy(false);
+		}
+	};
+
+	const doApprove = async () => {
+		setBusy(true);
+		try {
+			const payload = await buildSendBack(getState().reviewId, true);
+			send({ type: "send-back", reviewId: getState().reviewId, approved: true, payload });
+			clearAllAnnotations();
+		} finally {
+			setBusy(false);
+		}
+	};
+
+	const review = state.phase === "review";
+	const interact = !review && state.mode === "interact";
+	const working = !review && !interact;
+	const visibleMocks = state.committedCanvas
+		? state.world.mocks.filter((m) => m.id === state.committedCanvas)
+		: state.world.mocks;
+	const popupScreen = popupScreenCoords(state.popup?.x ?? 0, state.popup?.y ?? 0, activeEditor);
 
 	return (
 		<div
-			className={`forge-root ${state.mode === "interact" ? "forge-interact" : ""} ${
+			className={`forge-root ${state.theme === "light" ? "light" : ""} ${interact ? "forge-interact" : ""} ${
 				state.pickMode ? "forge-picking" : ""
 			}`}
 		>
-			<header className="forge-topbar">
-				<div className="forge-title">UI Mock Forge</div>
-				<nav className="forge-tabs">
-					{state.world.mocks.map((m) => (
-						<button
-							key={m.id}
-							className={`forge-tab ${m.id === state.activeCanvas ? "active" : ""}`}
-							onClick={() => setState({ activeCanvas: m.id, picked: [] })}
-						>
-							{m.label}
-						</button>
-					))}
-				</nav>
-				<div className="forge-modes">
-					<button
-						className={state.mode === "interact" ? "active" : ""}
-						onClick={() => setMode("interact")}
-					>
-						Interact
-					</button>
-					<button
-						className={state.mode === "annotate" ? "active" : ""}
-						onClick={() => setMode("annotate")}
-					>
-						Annotate
-					</button>
-					{state.mode === "annotate" && (
-						<button
-							className={state.pickMode ? "picking" : ""}
-							onClick={() => setPickMode(!state.pickMode)}
-						>
-							{state.pickMode ? "Picking…" : "Pick element"}
-						</button>
-					)}
-				</div>
-				<div className="forge-status">
-					<span className={`dot ${state.connected ? "on" : "off"}`} />
-					{state.phase === "review" && <span className="phase">review round {state.reviewId}</span>}
-					{state.phase === "idle" && <span className="phase">awaiting markup</span>}
-					{state.phase === "closed" && <span className="phase">session closed</span>}
-				</div>
-			</header>
+			<TopBar onApprove={review ? doApprove : () => {}} />
 
-			{state.phase === "review" && (
-				<div className="forge-banner">{state.reviewNote ?? "The agent is waiting for your markup."}</div>
-			)}
-
-			{state.phase === "closed" && (
-				<div className="forge-banner closed">Session closed — you can close this window.</div>
-			)}
-
-			<main className="forge-body">
-				<div className="forge-main">
-					{state.world.mocks.map((m) => (
+			<main id="workspace">
+				<section id="canvas-area">
+					{visibleMocks.map((m) => (
 						<MockCanvas key={m.id} mock={m} active={m.id === state.activeCanvas} />
 					))}
 					{state.world.mocks.length === 0 && (
 						<div className="forge-empty">
-							Waiting for the design agent to build pages…
-							<span>It writes React into the mock folder and calls mock_build.</span>
+							waiting for the design agent to build pages…
 						</div>
 					)}
-				</div>
-				{state.phase === "review" && active && <ReviewSidebar canvasId={active.id} />}
+
+					{!interact && state.phase !== "closed" && <DockStack editor={activeEditor} />}
+					{!interact && state.phase !== "closed" && <StylePanel editor={activeEditor} />}
+
+					{review && <PromptStack onSend={doSend} busy={busy} />}
+					{working && state.world.mocks.length > 0 && <ProgressBar />}
+					{state.phase === "closed" && (
+						<div className="forge-empty">session closed — you can close this window</div>
+					)}
+				</section>
 			</main>
+
+			<StatusLine />
+
+			<CommentPop screen={popupScreen} onFinalize={finalizePopup} onCancel={cancelPopup} />
 		</div>
 	);
+}
+
+function popupScreenCoords(
+	x: number,
+	y: number,
+	editor: Editor | null,
+): { x: number; y: number } | null {
+	if (!editor) return null;
+	const p = editor.pageToScreen({ x, y });
+	return { x: p.x, y: p.y };
 }
 
 function applyWorld(world: World) {
@@ -142,95 +181,12 @@ function applyWorld(world: World) {
 	setState({
 		world,
 		activeCanvas: stillValid ? state.activeCanvas : (world.mocks[0]?.id ?? null),
+		// a fresh world (new proposal turn) resets any previous commit
+		committedCanvas:
+			state.committedCanvas && world.mocks.some((m) => m.id === state.committedCanvas)
+				? state.committedCanvas
+				: null,
 	});
 }
 
-function ReviewSidebar({ canvasId }: { canvasId: string }) {
-	const state = useSyncState();
-	const [busy, setBusy] = useState(false);
-	const mock = state.world.mocks.find((m) => m.id === canvasId)!;
-	if (!mock) return null;
-
-	const doSend = async (approved: boolean) => {
-		setBusy(true);
-		try {
-			const payload = await buildSendBack(state.reviewId, approved);
-			send({ type: "send-back", reviewId: state.reviewId, approved, payload });
-			// the markup is consumed feedback — reset the canvas and sidebar so the
-			// next round starts clean (annotations do not carry across revisions)
-			clearAllAnnotations();
-		} finally {
-			setBusy(false);
-		}
-	};
-
-	return (
-		<aside className="forge-sidebar">
-			<h3>Describe the change</h3>
-			<textarea
-				className="desc"
-				placeholder="Describe what you want changed (the agent reads this first)…"
-				value={state.description}
-				onChange={(e) => setState({ description: e.target.value })}
-			/>
-
-			<h3>Picked pages</h3>
-			<div className="forge-pages">
-				{mock.pages.map((page) => (
-					<label key={page}>
-						<input
-							type="checkbox"
-							checked={state.picked.includes(page)}
-							onChange={(e) => {
-								const picked = e.target.checked
-									? [...state.picked, page]
-									: state.picked.filter((p) => p !== page);
-								setState({ picked });
-							}}
-						/>
-						{page}
-					</label>
-				))}
-			</div>
-
-			<h3>Comments ({state.comments.length})</h3>
-			<ul className="forge-comments">
-				{state.comments.map((c, i) => (
-					<li key={c.id}>
-						<div className="c-head">
-							<span className="num">{i + 1}</span>
-							<code title={c.selector ?? ""}>{c.selector ?? "(none)"}</code>
-							<button title="Remove" onClick={() => removeComment(c.id)}>
-								×
-							</button>
-						</div>
-						<textarea
-							placeholder="What's wrong here?"
-							value={c.text}
-							onFocus={() => highlight(c.page, c.selector, true)}
-							onBlur={() => highlight(c.page, c.selector, false)}
-							onChange={(e) => {
-								const comments = state.comments.map((x) =>
-									x.id === c.id ? { ...x, text: e.target.value } : x,
-								);
-								setState({ comments });
-							}}
-						/>
-					</li>
-				))}
-				{state.comments.length === 0 && (
-					<li className="hint">Use “Pick element” in annotate mode to tag specific elements.</li>
-				)}
-			</ul>
-
-			<div className="forge-sidebar-actions">
-				<button className="primary" disabled={busy} onClick={() => doSend(false)}>
-					{busy ? "Sending…" : "Send back"}
-				</button>
-				<button className="approve" disabled={busy} onClick={() => doSend(true)}>
-					Approve design
-				</button>
-			</div>
-		</aside>
-	);
-}
+export { highlight, removeComment };

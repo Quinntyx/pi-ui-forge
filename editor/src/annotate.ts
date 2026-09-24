@@ -50,7 +50,7 @@ export function addCommentFromPick(msg: PickMessage): string | null {
 		type: "comment-pin",
 		x: frame.x + msg.rect.x,
 		y: frame.y + msg.rect.y,
-		props: { commentId, num: getState().comments.length + 1, canvasId },
+		props: { commentId, num: getState().comments.length + 1, canvasId, w: 17, h: 17 },
 	});
 
 	const comment: ForgeComment = {
@@ -62,7 +62,11 @@ export function addCommentFromPick(msg: PickMessage): string | null {
 		x: frame.x + msg.rect.x,
 		y: frame.y + msg.rect.y,
 	};
-	setState({ comments: [...getState().comments, comment] });
+	setState({
+		comments: [...getState().comments, comment],
+		// the popup comment editor opens anchored at the pin
+		popup: { commentId, x: frame.x + msg.rect.x, y: frame.y + msg.rect.y },
+	});
 	highlight(comment.page, comment.selector, true);
 	return commentId;
 }
@@ -101,6 +105,26 @@ export function clearAllAnnotations(): void {
 		if (ids.length) editor.deleteShapes(ids);
 	}
 	setState({ comments: [], description: "", picked: [] });
+}
+
+/** Close the popup, keeping the comment (⏎ finalize). */
+export function finalizePopup(): void {
+	const popup = getState().popup;
+	if (!popup) return;
+	highlight(
+		getState().comments.find((c) => c.id === popup.commentId)?.page ?? null,
+		getState().comments.find((c) => c.id === popup.commentId)?.selector ?? null,
+		false,
+	);
+	setState({ popup: null });
+}
+
+/** Close the popup and drop the comment + pin (esc cancel). */
+export function cancelPopup(): void {
+	const popup = getState().popup;
+	if (!popup) return;
+	removeComment(popup.commentId);
+	setState({ popup: null });
 }
 
 export function highlight(page: string | null, selector: string | null, on: boolean): void {

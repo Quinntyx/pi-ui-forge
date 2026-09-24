@@ -2,10 +2,19 @@
 
 import type { ForgeComment, Phase, World } from "./types";
 
+export interface PopupState {
+	commentId: string;
+	/** page-space position of the pin (converted to screen when rendered) */
+	x: number;
+	y: number;
+}
+
 export interface AppState {
 	connected: boolean;
 	world: World;
 	activeCanvas: string | null;
+	/** canvas committed by the user via the design-options strip (hides the rest) */
+	committedCanvas: string | null;
 	mode: "interact" | "annotate";
 	pickMode: boolean;
 	phase: Phase;
@@ -14,12 +23,16 @@ export interface AppState {
 	picked: string[];
 	description: string;
 	comments: ForgeComment[];
+	/** popup comment editor anchored at a picked element */
+	popup: PopupState | null;
+	theme: "light" | "dark";
 }
 
 let state: AppState = {
 	connected: false,
 	world: { mocks: [] },
 	activeCanvas: null,
+	committedCanvas: null,
 	mode: "interact",
 	pickMode: false,
 	phase: "idle",
@@ -28,6 +41,8 @@ let state: AppState = {
 	picked: [],
 	description: "",
 	comments: [],
+	popup: null,
+	theme: "light",
 };
 
 const listeners = new Set<() => void>();

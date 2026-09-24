@@ -4,6 +4,7 @@
 import { BaseBoxShapeUtil, HTMLContainer, T } from "tldraw";
 import type { CommentPinShape, MockPageShape } from "./schema-augment";
 import type { TLShape } from "tldraw";
+import { getState } from "./store";
 
 const mockPageProps = {
 	page: T.string,
@@ -58,13 +59,23 @@ export class CommentPinShapeUtil extends BaseBoxShapeUtil<CommentPinShape> {
 	static override props = commentPinProps;
 
 	override getDefaultProps(): CommentPinShape["props"] {
-		return { commentId: "", num: 1, canvasId: "m0", w: 24, h: 24 };
+		return { commentId: "", num: 1, canvasId: "m0", w: 17, h: 17 };
 	}
 
 	override component(shape: CommentPinShape) {
+		const comment = getState().comments.find((c) => c.id === shape.props.commentId);
+		const color = PIN_COLORS[(shape.props.num - 1 + PIN_COLORS.length) % PIN_COLORS.length];
 		return (
 			<HTMLContainer style={{ pointerEvents: "all" }}>
-				<div className="comment-pin">{shape.props.num}</div>
+				<div className={`pin c-${color}`} style={{ width: 17, height: 17 }}>
+					{shape.props.num}
+				</div>
+				{comment && (comment.selector || comment.text) && (
+					<div className="pin-tip">
+						{comment.selector && <code>{comment.selector}</code>}
+						{comment.text}
+					</div>
+				)}
 			</HTMLContainer>
 		);
 	}
@@ -76,6 +87,9 @@ export class CommentPinShapeUtil extends BaseBoxShapeUtil<CommentPinShape> {
 		return path;
 	}
 }
+
+/** Pin accent colors, mirroring the design (yellow/orange/purple/...). */
+const PIN_COLORS = ["yellow", "orange", "purple", "red", "aqua", "green"];
 
 /** Shapes managed by the forge (never treated as user drawings). */
 export function isForgeShape(shape: TLShape): boolean {

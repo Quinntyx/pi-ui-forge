@@ -8,7 +8,6 @@ import { CanvasErrorBoundary } from "./canvas-error-boundary";
 import { Tldraw, createShapeId, track, useEditor, type Editor } from "tldraw";
 import type { WorldMock } from "./types";
 import { CommentPinShapeUtil, MockPageShapeUtil } from "./shapes";
-import "./canvas.css";
 
 export const FRAME_W = 1280;
 export const FRAME_H = 800;
@@ -83,8 +82,24 @@ function MockCanvasInner({ mock }: { mock: WorldMock }) {
 			<Tldraw
 				shapeUtils={[MockPageShapeUtil, CommentPinShapeUtil]}
 				persistenceKey={`forge-${mock.id}`}
+				components={{
+					Toolbar: null,
+					StylePanel: null,
+					PageMenu: null,
+					NavigationPanel: null,
+					DebugPanel: null,
+					HelpMenu: null,
+					MenuPanel: null,
+					QuickActions: null,
+					TopPanel: null,
+				}}
 				onMount={(editor) => {
 					editors.set(mock.id, editor);
+					try {
+						editor.updateInstanceState({ isGridMode: true } as never);
+					} catch {
+						/* grid mode is cosmetic */
+					}
 					return () => {
 						editors.delete(mock.id);
 					};
