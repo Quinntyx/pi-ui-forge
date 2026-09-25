@@ -56,6 +56,9 @@ interface WorldMock {
 	id: string;
 	label: string;
 	pages: string[];
+	/** frame size in CSS px (the viewport the mock pages are designed at) */
+	width: number;
+	height: number;
 }
 
 interface ReviewPayload {
@@ -571,9 +574,21 @@ async function runBuild(cwd: string): Promise<{ ok: boolean; tail: string }> {
 
 // Canvas ids are stable per-position (m0, m1, …) so labels can change freely
 // across revisions without invalidating the tldraw persistence key — user
-// annotations live in per-canvas IndexedDB stores keyed by this id.
-function deriveWorldMock(m: { label: string; pages: string[] }, i: number): WorldMock {
-	return { id: `m${i}`, label: m.label, pages: [...m.pages] };
+// annotations live in per-canvas IndexedDB stores keyed by this id. The
+// viewport (frame size) is the canvas's device size — 390×844 for mobile etc.
+function deriveWorldMock(
+	m: { label: string; pages: string[]; viewport?: { width?: number; height?: number } },
+	i: number,
+): WorldMock {
+	const clamp = (v: number | undefined, fallback: number) =>
+		v && Number.isFinite(v) ? Math.min(4000, Math.max(200, Math.round(v))) : fallback;
+	return {
+		id: `m${i}`,
+		label: m.label,
+		pages: [...m.pages],
+		width: clamp(m.viewport?.width, 1280),
+		height: clamp(m.viewport?.height, 800),
+	};
 }
 
 // --- extension -----------------------------------------------------------------------------------
@@ -614,6 +629,18 @@ export default function (pi: ExtensionAPI) {
 					pages: Type.Array(Type.String(), {
 						description: "Page names from app/pages/ (e.g. 'home', 'picker')",
 					}),
+					viewport: Type.Optional(
+						Type.Object(
+							{
+								width: Type.Optional(Type.Number({ description: "Frame width in CSS px (default 1280)" })),
+								height: Type.Optional(Type.Number({ description: "Frame height in CSS px (default 800)" })),
+							},
+							{
+								description:
+									"Frame size the pages are designed at — one canvas = one viewport. Set device-real sizes for constrained form factors, e.g. mobile { width: 390, height: 844 }, tablet { width: 834, height: 1112 }, desktop { width: 1440, height: 900 }.",
+							},
+						),
+					),
 				}),
 			),
 		}),

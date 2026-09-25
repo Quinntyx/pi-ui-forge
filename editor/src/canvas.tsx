@@ -29,6 +29,8 @@ export function framePosition(index: number) {
 }
 
 function syncFrames(editor: Editor, mock: WorldMock) {
+	const width = mock.width ?? FRAME_W;
+	const height = mock.height ?? FRAME_H;
 	const existing = [...editor.getCurrentPageShapeIds()]
 		.map((id) => editor.getShape(id))
 		.filter((s): s is NonNullable<typeof s> => !!s && s.type === "mock-page");
@@ -37,14 +39,24 @@ function syncFrames(editor: Editor, mock: WorldMock) {
 	const updates: Parameters<Editor["updateShape"]>[0][] = [];
 	const creations: Parameters<Editor["createShapes"]>[0] = [];
 	const seen = new Set<string>();
+	let resized = false;
 
 	mock.pages.forEach((page, i) => {
 		seen.add(page);
-		const { x, y } = framePosition(i);
+		const x = i * (width + GAP);
+		const y = 0;
 		const current = byPage.get(page);
 		if (current) {
-			if (current.x !== x || current.y !== y) {
-				updates.push({ id: current.id, type: current.type, x, y });
+			const props = current.props as { w: number; h: number };
+			if (current.x !== x || current.y !== y || props.w !== width || props.h !== height) {
+				resized = true;
+				updates.push({
+					id: current.id,
+					type: "mock-page" as const,
+					x,
+					y,
+					props: { w: width, h: height },
+				});
 			}
 		} else {
 			creations.push({
@@ -52,7 +64,7 @@ function syncFrames(editor: Editor, mock: WorldMock) {
 				type: "mock-page",
 				x,
 				y,
-				props: { page, w: FRAME_W, h: FRAME_H, canvasId: mock.id },
+				props: { page, w: width, h: height, canvasId: mock.id },
 			});
 		}
 	});
@@ -62,7 +74,7 @@ function syncFrames(editor: Editor, mock: WorldMock) {
 	if (creations.length) editor.createShapes(creations);
 	if (updates.length) for (const u of updates) editor.updateShape(u);
 	// frame the pages like the design does (centered with breathing room)
-	if (creations.length || existing.length === 0) {
+	if (creations.length || resized || existing.length === 0) {
 		try {
 			editor.zoomToFit({ animation: { duration: 0 } });
 		} catch {
@@ -73,11 +85,11 @@ function syncFrames(editor: Editor, mock: WorldMock) {
 
 const FrameSync = track(function FrameSync({ mock }: { mock: WorldMock }) {
 	const editor = useEditor();
-	const lastPages = useRef("");
+	const lastKey = useRef("");
 	useEffect(() => {
-		const key = mock.pages.join(",");
-		if (lastPages.current !== key) {
-			lastPages.current = key;
+		const key = `${mock.pages.join(",")}@${mock.width ?? FRAME_W}x${mock.height ?? FRAME_H}`;
+		if (lastKey.current !== key) {
+			lastKey.current = key;
 			syncFrames(editor, mock);
 		}
 	}, [editor, mock]);

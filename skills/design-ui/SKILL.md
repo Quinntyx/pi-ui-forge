@@ -36,6 +36,13 @@ main agent or a dedicated design subagent.
     frames (the standard view once the design has crystallized);
   - **several single-page entries** → several canvases (tabs), one per
     interpretation, for the user to pick between.
+  - **`viewport` per canvas** — frames render at the size you set, which is
+    the viewport the pages are designed at. Match the real form factor: mobile
+    `{ width: 390, height: 844 }`, small phone `{ width: 360, height: 780 }`,
+    tablet `{ width: 834, height: 1112 }`, desktop `{ width: 1440, height:
+    900 }` (the default is 1280×800). Designing at the true device size makes
+    wrapping, spacing, and type scale honest — design the page as it will
+    actually render, and the user reviews it 1:1.
 - **Variant escalation (important, do not skip).** When the design direction
   is still undecided, your FIRST proposals must be **2–3 deliberately
   different, deliberately SMALL variants** — typically one page each

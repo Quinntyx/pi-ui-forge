@@ -5,6 +5,9 @@ export interface WorldMock {
 	id: string;
 	label: string;
 	pages: string[];
+	/** frame size in CSS px (the viewport the pages are designed at) */
+	width: number;
+	height: number;
 }
 
 export interface World {
