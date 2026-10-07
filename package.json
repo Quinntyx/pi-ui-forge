@@ -18,6 +18,7 @@
   },
   "scripts": {
     "build:editor": "vite build editor",
+    "postinstall": "node scripts/ensure-electron.mjs",
     "smoke": "node scripts/smoke-server.mjs",
     "check": "tsc -p editor/tsconfig.json && tsc --noEmit --strict --skipLibCheck --target ES2022 --module ESNext --moduleResolution bundler --types node --ignoreConfig index.ts"
   },
