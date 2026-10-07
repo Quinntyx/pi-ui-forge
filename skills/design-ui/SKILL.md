@@ -35,7 +35,12 @@ main agent or a dedicated design subagent.
   - **one entry with several pages** → one canvas, pages as side-by-side
     frames (the standard view once the design has crystallized);
   - **several single-page entries** → several canvases (tabs), one per
-    interpretation, for the user to pick between.
+    interpretation, for the user to pick between. When proposing options,
+    give EACH entry its own short `label` (2–4 words, e.g. "Option A") and
+    its own `description` — one line on what makes *that* option distinct
+    ("dense data-first table", "roomy marketing-style hero"). Never repeat
+    the other options' content in a label or description: each chip in the
+    editor describes only its own canvas.
   - **`viewport` per canvas** — frames render at the size you set, which is
     the viewport the pages are designed at. Match the real form factor: mobile
     `{ width: 390, height: 844 }`, small phone `{ width: 360, height: 780 }`,

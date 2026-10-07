@@ -2,7 +2,7 @@
 // (design-mocks/app/components/chrome.tsx + a.css, converged r51) bound to
 // the real editor state: tldraw tools/styles, pick mode, the review loop.
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import {
 	DefaultColorStyle,
 	DefaultDashStyle,
@@ -35,6 +35,14 @@ const COLOR_MAP: Record<string, string> = {
 	olive: "light-green", lime: "green", coral: "light-red", red: "red",
 };
 const SWATCHES = Object.keys(COLOR_MAP);
+
+// friendly words for the agent's design steps shown while it works — raw tool
+// names are plumbing the user never asked to see
+const CALL_LABELS: Record<string, string> = {
+	mock_build: "building pages",
+	mock_screenshot: "checking the result",
+	mock_review: "handing over for review",
+};
 
 function DashIcon({ kind }: { kind: "solid" | "dashed" | "dotted" | "thin" }) {
 	const base = { cx: 8.5, cy: 8.5, r: 5.2, fill: "none", stroke: "currentColor" } as const;
@@ -124,7 +132,7 @@ export function DockStack({ editor }: { editor: Editor | null }) {
 	const activeTool = state.pickMode ? null : editor ? editor.getCurrentToolId() : null;
 	return (
 		<div id="dock-stack">
-			<div id="pick-panel" title="pick element (P) — cancels the selected tldraw tool" aria-label="pick element">
+			<div id="pick-panel" title="pick element (P) — click the mock to comment on it" aria-label="pick element">
 				<button
 					id="pick-btn"
 					disabled={working}
@@ -264,10 +272,14 @@ export function PromptStack({
 								key={m.id}
 								className={`do-chip ${m.id === state.activeCanvas ? "do-chip-on" : ""}`}
 								aria-pressed={m.id === state.activeCanvas}
+								title={m.description ?? m.label}
 								onClick={() => setState({ activeCanvas: m.id, picked: [] })}
 							>
-								<span className="do-idx">{i}</span>
-								{m.label}
+								<span className="do-chip-top">
+									<span className="do-idx">{i}</span>
+									{m.label}
+								</span>
+								{m.description && <span className="do-desc">{m.description}</span>}
 							</button>
 						))}
 						<span className="do-hint">
@@ -320,7 +332,10 @@ export function PromptStack({
 export function ProgressBar() {
 	const state = useSyncState();
 	const [, tick] = useState(0);
-	// re-render once a second so the elapsed time ticks while the agent works
+	// re-render once a second so the elapsed time ticks smoothly while the
+	// agent works (the clock itself lives in state.workStartedAt: it starts at
+	// send-back, pauses while the agent blocks in review, and never counts
+	// review wait — server activity messages are too sparse to tick from)
 	useEffect(() => {
 		const t = setInterval(() => tick((n) => n + 1), 1000);
 		return () => clearInterval(t);
@@ -328,7 +343,10 @@ export function ProgressBar() {
 	const label = state.world.mocks.find((m) => m.id === state.activeCanvas)?.label;
 	const hasWorld = state.world.mocks.length > 0;
 	const act = state.activity;
-	const calls = act?.calls?.filter((c) => c && c !== "mock_open") ?? [];
+	const calls =
+		act?.calls
+			?.filter((c) => c && c !== "mock_open")
+			.map((c) => CALL_LABELS[c] ?? c.replace(/^mock_/, "")) ?? [];
 	const main = act
 		? calls.length
 			? `${act.label?.trim() || act.phase} — ${calls.join(", ")}`
@@ -336,7 +354,10 @@ export function ProgressBar() {
 		: hasWorld
 			? `revising ${label} — ${state.description || "applying the last review"}`
 			: "the design agent is starting";
-	const elapsed = act?.elapsedMs ? ` · ${Math.round(act.elapsedMs / 1000)}s` : "";
+	const elapsedSec = state.workStartedAt
+		? Math.max(0, Math.floor((Date.now() - state.workStartedAt) / 1000))
+		: 0;
+	const elapsed = ` · ${elapsedSec}s`;
 	return (
 		<div id="prompt-stack">
 			<div id="progress-bar">
@@ -397,6 +418,12 @@ export function StatusLine() {
 }
 
 // ── popup comment editor (anchored at the picked pin) ───────────────────────
+//
+// Semantics: only typed content makes a comment real. While the popup is open
+// on an empty comment, clicking elsewhere on the canvas MOVES the comment
+// (handled in annotate.ts); Enter finalizes (an empty comment is dropped),
+// Escape cancels (empty → removed, typed → kept and popup closes).
+// Shift+Enter inserts a newline — comments may be multi-line.
 
 export function CommentPop({
 	screen,
@@ -408,17 +435,35 @@ export function CommentPop({
 	onCancel: () => void;
 }) {
 	const state = useSyncState();
-	const comment = state.comments.find((c) => c.id === state.popup?.commentId);
+	const areaRef = useRef<HTMLTextAreaElement>(null);
+	const commentId = state.popup?.commentId;
+	const comment = state.comments.find((c) => c.id === commentId);
+
+	// keep the auto-growing textarea sized to its content (multi-line edits,
+	// reopening, or a move that swaps the text underneath it)
+	useEffect(() => {
+		const el = areaRef.current;
+		if (!el) return;
+		el.style.height = "auto";
+		el.style.height = `${el.scrollHeight}px`;
+	}, [commentId, comment?.text]);
+
 	if (!screen || !comment) return null;
+	// fixed-positioned (CSS owns position/size); left/top track the pin and the
+	// arrow stays glued to it via the --pop-arrow-x custom property
+	const left = Math.max(8, screen.x - 125);
+	const top = Math.max(8, screen.y - 118);
 	return (
 		<div
 			id="comment-pop"
-			style={{ position: "fixed", left: screen.x - 125, top: screen.y - 118, width: 250 }}
+			style={{ left, top, "--pop-arrow-x": `${screen.x - left}px` } as CSSProperties}
 		>
 			<div className="pop-main">
 				<code className="pop-sel">{comment.selector ?? "(canvas)"}</code>
-				<input
+				<textarea
+					ref={areaRef}
 					className="pop-input"
+					rows={1}
 					autoFocus
 					placeholder="What should change here?"
 					value={comment.text}
@@ -429,12 +474,16 @@ export function CommentPop({
 						setState({ comments });
 					}}
 					onKeyDown={(e) => {
-						if (e.key === "Enter") onFinalize();
-						if (e.key === "Escape") onCancel();
+						if (e.key === "Enter" && !e.shiftKey) {
+							e.preventDefault();
+							onFinalize();
+						}
+						// Escape is handled by the global handler in App (closes the
+						// popup; an empty comment is dropped, a typed one is kept)
 					}}
 				/>
 				<div className="pop-hint">
-					<b>⏎</b> finalize comment · <b>esc</b> cancel
+					<b>⏎</b> finalize · <b>⇧⏎</b> newline · <b>esc</b> cancel
 				</div>
 			</div>
 		</div>

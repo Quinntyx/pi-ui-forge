@@ -4,6 +4,8 @@
 export interface WorldMock {
 	id: string;
 	label: string;
+	/** what makes THIS option distinct (shown on its chip when picking between options) */
+	description?: string | null;
 	pages: string[];
 	/** frame size in CSS px (the viewport the pages are designed at) */
 	width: number;

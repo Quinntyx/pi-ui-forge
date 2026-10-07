@@ -17,6 +17,9 @@ export interface AppState {
 	committedCanvas: string | null;
 	mode: "interact" | "annotate";
 	pickMode: boolean;
+	/** bundle hash per page name (server-pushed) — mock-page iframes embed it
+	 * in their src (?v=…) so a changed hash reloads the page */
+	hashes: Record<string, string>;
 	phase: Phase;
 	reviewId: number;
 	reviewNote: string | null;
@@ -27,6 +30,8 @@ export interface AppState {
 	popup: PopupState | null;
 	/** live agent activity from pi-tool-tree (label, phase, running calls) */
 	activity: AgentActivity | null;
+	/** wall-clock ms timestamp when the current working stretch began (null while the agent is blocked in review) */
+	workStartedAt: number | null;
 	theme: "light" | "dark";
 }
 
@@ -37,6 +42,7 @@ let state: AppState = {
 	committedCanvas: null,
 	mode: "interact",
 	pickMode: false,
+	hashes: {},
 	phase: "idle",
 	reviewId: 0,
 	reviewNote: null,
@@ -45,6 +51,7 @@ let state: AppState = {
 	comments: [],
 	popup: null,
 	activity: null,
+	workStartedAt: null,
 	theme: "light",
 };
 

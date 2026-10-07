@@ -31,21 +31,30 @@ export default function App() {
 				case "init":
 					applyWorld(msg.world);
 					applyPageHashes(msg.hashes);
-					setState({ phase: msg.phase, reviewId: msg.reviewId, reviewNote: msg.note });
+					// joining mid-working-stretch: start the elapsed clock now (the
+					// true start is unknowable client-side; review blocks it at null)
+					setState({
+						phase: msg.phase,
+						reviewId: msg.reviewId,
+						reviewNote: msg.note,
+						workStartedAt: msg.phase === "review" ? null : Date.now(),
+					});
 					break;
 				case "set-world":
 					applyWorld(msg.world);
 					applyPageHashes(msg.hashes);
 					break;
 				case "review-start":
-					setState({ phase: "review", reviewId: msg.reviewId, reviewNote: msg.note });
+					// agent is now blocked waiting for the review — stop the clock
+					setState({ phase: "review", reviewId: msg.reviewId, reviewNote: msg.note, workStartedAt: null });
 					if (getState().mode === "interact") setState({ mode: "annotate" });
 					break;
 				case "activity":
 					setState({ activity: msg.activity ?? null });
 					break;
 				case "review-end":
-					setState({ phase: "idle" });
+					// the agent resumed after a send-back — restart the clock at 0
+					setState({ phase: "idle", workStartedAt: Date.now() });
 					break;
 				case "session-closed":
 					setState({ phase: "closed" });
@@ -181,11 +190,10 @@ function applyWorld(world: World) {
 	setState({
 		world,
 		activeCanvas: stillValid ? state.activeCanvas : (world.mocks[0]?.id ?? null),
-		// a fresh world (new proposal turn) resets any previous commit
-		committedCanvas:
-			state.committedCanvas && world.mocks.some((m) => m.id === state.committedCanvas)
-				? state.committedCanvas
-				: null,
+		// a fresh world (new proposal turn) resets any previous commit — keeping
+		// it would pin the window to the previously committed option canvas and
+		// hide the rest of the revised world
+		committedCanvas: null,
 	});
 }
 

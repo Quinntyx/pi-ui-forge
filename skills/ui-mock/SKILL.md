@@ -21,7 +21,7 @@ import pi_subagents as subagents
 h = subagents.agent(
     brief,
     name="designer",
-    profile="design-subagents",   # dedicated profile: pi-ui-forge tools live here
+    agentDir=agent_dir,           # absolute path to your profile/agent dir: pi-ui-forge tools live there
     cwd=mock_folder,              # durable, your choice of location
 )
 result = await h                  # resolves when the user approves or closes the editor

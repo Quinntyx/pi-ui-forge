@@ -55,6 +55,8 @@ const PLUGIN_DIR = (() => {
 interface WorldMock {
 	id: string;
 	label: string;
+	/** what makes THIS option distinct (shown on its chip when picking between options) */
+	description?: string | null;
 	pages: string[];
 	/** frame size in CSS px (the viewport the mock pages are designed at) */
 	width: number;
@@ -401,10 +403,13 @@ async function ensureSession(ctx: ExtensionContext): Promise<ForgeSession> {
 		port,
 		token,
 		clients: new Map(),
-		world: session?.world ?? { mocks: [] },
-		pageHashes: session?.pageHashes ?? {},
+		// fresh session state — never inherit the previous session's world or
+		// page hashes: the editor would boot showing the OLD app (possibly
+		// from a different mock folder) until the first build lands
+		world: { mocks: [] },
+		pageHashes: {},
 		phase: "idle",
-		reviewId: session?.reviewId ?? 0,
+		reviewId: 0,
 		reviewNote: null,
 		pendingReview: null,
 		shotWaiters: new Map(),
@@ -577,7 +582,7 @@ async function runBuild(cwd: string): Promise<{ ok: boolean; tail: string }> {
 // annotations live in per-canvas IndexedDB stores keyed by this id. The
 // viewport (frame size) is the canvas's device size — 390×844 for mobile etc.
 function deriveWorldMock(
-	m: { label: string; pages: string[]; viewport?: { width?: number; height?: number } },
+	m: { label: string; description?: string | null; pages: string[]; viewport?: { width?: number; height?: number } },
 	i: number,
 ): WorldMock {
 	const clamp = (v: number | undefined, fallback: number) =>
@@ -585,6 +590,7 @@ function deriveWorldMock(
 	return {
 		id: `m${i}`,
 		label: m.label,
+		description: m.description?.trim() || null,
 		pages: [...m.pages],
 		width: clamp(m.viewport?.width, 1280),
 		height: clamp(m.viewport?.height, 800),
@@ -625,7 +631,13 @@ export default function (pi: ExtensionAPI) {
 		parameters: Type.Object({
 			mocks: Type.Array(
 				Type.Object({
-					label: Type.String({ description: "Canvas/tab label, e.g. 'Option A' or 'Checkout'" }),
+					label: Type.String({ description: "Canvas/tab label, e.g. 'Option A' or 'Checkout' — keep it SHORT (2–4 words)" }),
+					description: Type.Optional(
+						Type.String({
+							description:
+								"One line on what makes THIS option distinct, e.g. 'dense data-first table layout'. Shown under its label when the user picks between options — never repeat the other options' content here, describe only this one.",
+						}),
+					),
 					pages: Type.Array(Type.String(), {
 						description: "Page names from app/pages/ (e.g. 'home', 'picker')",
 					}),
@@ -863,9 +875,9 @@ export default function (pi: ExtensionAPI) {
 
 	// --- live agent activity → editor progress -------------------------------
 	//
-	// Preferred source: pi-tool-tree's activity API (the model-declared label,
+	// Preferred source: pi-activity's API (the model-declared label,
 	// running calls, phase). The tool_call summarizer below is only a fallback
-	// for sessions without pi-tool-tree.
+	// for sessions without pi-activity.
 	interface ToolTreeActivity {
 		label: string | null;
 		phase: string;
@@ -877,15 +889,15 @@ export default function (pi: ExtensionAPI) {
 		getActivity?: () => Record<string, unknown>;
 		subscribe?: (fn: (activity: Record<string, unknown>, change: unknown) => void) => () => void;
 	}
-	const toolTree = (): ToolTreeApi | undefined =>
-		(globalThis as unknown as Record<symbol, ToolTreeApi | undefined>)[Symbol.for("pi-tool-tree:api")];
+	const activityApi = (): ToolTreeApi | undefined =>
+		(globalThis as unknown as Record<symbol, ToolTreeApi | undefined>)[Symbol.for("pi-activity:api")];
 
-	let usingToolTree = false;
-	const subscribeToolTree = (): boolean => {
-		const api = toolTree();
+	let usingActivityApi = false;
+	const subscribeActivityApi = (): boolean => {
+		const api = activityApi();
 		if (!api?.subscribe) return false;
 		api.subscribe((activity) => {
-			usingToolTree = true;
+			usingActivityApi = true;
 			if (!session || session.closed) return;
 			const calls = Array.isArray(activity.calls)
 				? (activity.calls as { toolName?: string }[]).map((c) => c.toolName ?? "tool")
@@ -902,7 +914,7 @@ export default function (pi: ExtensionAPI) {
 		});
 		return true;
 	};
-	subscribeToolTree();
+	subscribeActivityApi();
 
 	const activityLabel = (toolName: string, input: Record<string, unknown> | undefined): string => {
 		const arg = input ?? {};
@@ -929,7 +941,7 @@ export default function (pi: ExtensionAPI) {
 		}
 	};
 	pi.on("tool_call", (event) => {
-		if (!usingToolTree && !subscribeToolTree() && session && !session.closed) {
+		if (!usingActivityApi && !subscribeActivityApi() && session && !session.closed) {
 			broadcastEditors(session, {
 				type: "activity",
 				activity: {

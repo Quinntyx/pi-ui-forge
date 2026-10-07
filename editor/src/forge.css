@@ -53,7 +53,11 @@
 	width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
 	background: transparent; color: var(--faint);
 	border: none; border-radius: 4px; cursor: pointer; padding: 0;
-}#pick-btn:hover { background: var(--bg2); color: var(--fg); }.pick-btn-on { background: var(--orange); color: var(--pin-text); }.pick-btn-on:hover { background: var(--orange); color: var(--pin-text); }#pick-btn:disabled { opacity: 0.4; cursor: default; background: transparent; color: var(--faint); }#pick-btn:disabled:hover { background: transparent; color: var(--faint); }/* approve — moved to the topbar corner (was in the prompt bar) */
+}#pick-btn:hover { background: var(--bg2); color: var(--fg); }/* armed pick tool — must be id-qualified: a bare .pick-btn-on class loses to the
+   #pick-btn base/hover rules and the active background never renders. Visual
+   weight mirrors .tool-active: filled background + inset accent ring. */
+#pick-btn.pick-btn-on { background: var(--pick-bg); color: var(--fg); box-shadow: inset 0 0 0 1px var(--orange); }
+#pick-btn.pick-btn-on:hover { background: var(--pick-bg-hover); color: var(--fg); box-shadow: inset 0 0 0 1px var(--orange); }#pick-btn:disabled { opacity: 0.4; cursor: default; background: transparent; color: var(--faint); }#pick-btn:disabled:hover { background: transparent; color: var(--faint); }/* approve — moved to the topbar corner (was in the prompt bar) */
 .topbar-right { display: flex; align-items: center; gap: 7px; }#topbar-approve {
 	font: inherit; font-size: 11px; color: var(--faint);
 	background: transparent; border: 1px solid var(--bg3);
@@ -77,37 +81,61 @@
 }.frame { flex: none; position: relative; }.frame-label {
 	position: absolute; top: -18px; left: 0; font-size: 10.5px; color: var(--grey);
 }.frame-label::before { content: "\250c "; color: var(--bg3); }/* element currently targeted by the pick → comment popup */
-.pop-target { outline: 1px solid var(--orange); outline-offset: 1px; }/* ── pins — color-coded per comment; accent mirrors the badge ── */
+.pop-target { outline: 1px solid var(--orange); outline-offset: 1px; }/* ── pins — color-coded per comment; accent mirrors the badge ──
+   .pin-wrap anchors pin + tooltip inside the tldraw HTMLContainer; hover on
+   the wrap (pin OR tooltip) shows the tip. */
 .pin {
 	width: 17px; height: 17px; flex: none;
 	display: inline-flex; align-items: center; justify-content: center;
 	color: var(--pin-text); font-size: 10.5px; font-weight: 700;
 	box-shadow: 2px 2px 0 var(--shadow);
-}.c-yellow { background: var(--yellow); }.c-orange { background: var(--orange); }.c-purple { background: var(--purple); }.c-red { background: var(--red); }.c-green { background: var(--green); }.c-aqua { background: var(--aqua); }.c-blue { background: var(--blue); }.pin-wrap { position: absolute; z-index: 10; }/* hover tooltip on the numbered badge: selector + text */
+}.pin-wrap {
+	position: absolute; top: 0; left: 0; z-index: 10;
+}.c-yellow { background: var(--yellow); }.c-orange { background: var(--orange); }.c-purple { background: var(--purple); }.c-red { background: var(--red); }.c-green { background: var(--green); }.c-aqua { background: var(--aqua); }.c-blue { background: var(--blue); }/* hover tooltip on the numbered badge: selector + text. Wraps at 280px
+   instead of running on one line; pointer-events flip on with visibility so
+   hovering the tip itself keeps it open (needed for click-to-edit). */
 .pin-tip {
 	position: absolute; bottom: calc(100% + 9px); left: 50%; transform: translateX(-50%);
+	width: max-content; max-width: 280px;
 	background: var(--bar); border: 1px solid var(--bg3); padding: 6px 9px;
 	font-size: 10.5px; line-height: 1.45; color: var(--faint);
-	white-space: nowrap; opacity: 0; pointer-events: none;
+	white-space: normal; overflow-wrap: anywhere;
+	opacity: 0; pointer-events: none; cursor: pointer;
 	transition: opacity 0.12s; z-index: 40; text-align: left;
 	box-shadow: 3px 3px 0 var(--shadow);
 }.pin-tip::after {
 	content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
 	border: 5px solid transparent; border-top-color: var(--bg3);
-}.pin-tip code { display: block; color: var(--aqua); font-size: 10px; margin-bottom: 2px; }.pin-wrap:hover .pin-tip { opacity: 1; }/* ── popup comment editor — appears above the pick, styled like the tooltip ── */
-.pop-anchor { position: relative; width: fit-content; }#comment-pop {
-	position: absolute; bottom: calc(100% + 9px); left: -125px;
-	width: 250px; z-index: 45; text-align: left;
+}.pin-tip code {
+	display: block; color: var(--aqua); font-size: 10px; margin-bottom: 2px;
+	overflow-wrap: anywhere;
+}.pin-tip-text { white-space: pre-wrap; }/* visible on pin hover — and pinned open while the inline editor is up */
+.pin-wrap:hover .pin-tip, .pin-tip.editing { opacity: 1; pointer-events: auto; }/* inline comment editor inside the tooltip (click the tooltip to edit) */
+.pin-edit {
+	display: block; width: 240px; max-width: 100%; resize: none; overflow: hidden;
+	background: transparent; border: none; border-bottom: 1px solid var(--bg3);
+	color: var(--fg); font: inherit; font-size: 10.5px; line-height: 1.45;
+	padding: 1px 0 3px; caret-color: var(--green); cursor: text;
+}.pin-edit:focus { outline: none; border-bottom-color: var(--green); }/* ── popup comment editor — fixed to the viewport, anchored at the pick via
+   inline left/top (chrome.tsx); the arrow follows with --pop-arrow-x. Sized
+   by content: the selector wraps, the textarea grows, nothing clips. ── */
+#comment-pop {
+	position: fixed; z-index: 45; text-align: left;
+	width: 250px;
 	background: var(--bar); border: 1px solid var(--bg3);
 	box-shadow: 3px 3px 0 var(--shadow);
-	padding: 6px 9px; display: flex; gap: 8px; align-items: flex-start;
+	padding: 6px 9px;
 }#comment-pop::after {
-	content: ""; position: absolute; top: 100%; left: 120px;
+	content: ""; position: absolute; top: 100%; left: var(--pop-arrow-x, 120px);
 	border: 5px solid transparent; border-top-color: var(--bg3);
-}.pop-main { flex: 1; min-width: 0; }.pop-input {
-	width: 100%; background: transparent; border: none; border-bottom: 1px solid var(--bg3);
-	color: var(--fg); font: inherit; font-size: 11px; padding: 1px 0 3px;
-	caret-color: var(--green); min-width: 0;
+}.pop-main { min-width: 0; }.pop-sel {
+	display: block; color: var(--aqua); font-size: 10px; margin-bottom: 2px;
+	white-space: normal; overflow-wrap: anywhere;
+}.pop-input {
+	display: block; width: 100%; resize: none; overflow: hidden;
+	background: transparent; border: none; border-bottom: 1px solid var(--bg3);
+	color: var(--fg); font: inherit; font-size: 11px; line-height: 1.5;
+	padding: 1px 0 3px; caret-color: var(--green); min-width: 0;
 }.pop-input:focus { outline: none; border-bottom-color: var(--green); }.pop-hint { font-size: 9.5px; color: var(--grey); margin-top: 5px; }.pop-hint b { color: var(--faint); font-weight: 600; }/* ── bottom-left stack: pick-element panel + tldraw tool dock ── */
 #dock-stack {
 	position: absolute; left: 12px; bottom: 20px;
@@ -173,15 +201,21 @@
 	background: var(--banner); border: 1px solid var(--bg3); border-bottom: none;
 	font-size: 11.5px; color: var(--faint);
 }.banner-round { color: var(--green); font-weight: 700; }.banner-text b { color: var(--yellow); }#prompt-bar { background: var(--bg1); border: 1px solid var(--bg3); }#design-options {
-	display: flex; align-items: center;
+	display: flex; align-items: stretch; flex-wrap: wrap;
 	padding: 0 10px 0 0;
 	border-bottom: 1px solid var(--line);
 }.do-chip {
-	display: inline-flex; align-items: center; gap: 7px;
+	display: flex; flex-direction: column; align-items: flex-start; gap: 1px;
 	font: inherit; font-size: 11px; color: var(--faint);
 	background: transparent; border: none; border-right: 1px solid var(--line);
-	padding: 3px 12px; cursor: pointer; border-radius: 0;
-}.do-chip:first-child { border-left: none; }.do-chip:hover { color: var(--fg); }.do-chip-on { background: var(--bg1); color: var(--fg); box-shadow: inset 0 -2px 0 var(--green); }.do-idx { font-size: 10px; color: var(--grey); }.do-chip-on .do-idx { color: var(--green); }.do-hint { font-size: 9.5px; color: var(--grey); margin-left: auto; padding-right: 2px; }.do-hint b { color: var(--faint); font-weight: 600; }.pop-sel { display: block; color: var(--aqua); font-size: 10px; margin-bottom: 2px; }#prompt-input-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px 8px 12px; }.prompt-caret { color: var(--green); font-weight: 700; }.prompt-input {
+	padding: 3px 12px; cursor: pointer; border-radius: 0; text-align: left;
+	max-width: 260px;
+}.do-chip-top { display: inline-flex; align-items: center; gap: 7px; }.do-desc {
+	font-size: 9.5px; line-height: 1.35; color: var(--grey);
+	white-space: normal; overflow-wrap: anywhere;
+	/* keep a long description from stretching the option strip — clamp it */
+	display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}.do-chip:first-child { border-left: none; }.do-chip:hover { color: var(--fg); }.do-chip:hover .do-desc { color: var(--faint); }.do-chip-on { background: var(--bg1); color: var(--fg); box-shadow: inset 0 -2px 0 var(--green); }.do-chip-on .do-desc { color: var(--fg); }.do-idx { font-size: 10px; color: var(--grey); }.do-chip-on .do-idx { color: var(--green); }.do-hint { font-size: 9.5px; color: var(--grey); margin-left: auto; padding-right: 2px; align-self: center; }.do-hint b { color: var(--faint); font-weight: 600; }#prompt-input-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px 8px 12px; }.prompt-caret { color: var(--green); font-weight: 700; }.prompt-input {
 	flex: 1; min-width: 0; background: transparent; border: none; color: var(--fg);
 	font: inherit; font-size: 11.5px;
 }.prompt-input:focus { outline: none; }.prompt-input::placeholder { color: var(--grey); }/* send-back — icon only */

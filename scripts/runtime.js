@@ -9,6 +9,107 @@
 	var highlightEl = null;
 	var picking = false;
 
+	// --- live hover preview (armed pick mode) ------------------------------
+	// Devtools-style overlay under the cursor: a positioned fill+border box on
+	// the hovered element plus a chip showing the selector a click would attach.
+	// Both live inside this iframe so they track the page, and both are
+	// pointer-events: none so they never become the click/hover target.
+	var hoverBox = null;
+	var hoverChip = null;
+	var hoverEl = null;
+
+	function ensureHoverLayer() {
+		if (hoverBox && hoverBox.isConnected) return;
+		hoverBox = document.createElement("div");
+		hoverBox.setAttribute("data-forge-hover", "box");
+		var b = hoverBox.style;
+		b.cssText =
+			"position:fixed;display:none;pointer-events:none;z-index:2147483646;" +
+			"box-sizing:border-box;background:rgba(255,77,109,0.18);" +
+			"border:1px solid #ff4d6d;border-radius:1px;";
+		var root = document.body || document.documentElement;
+		root.appendChild(hoverBox);
+
+		hoverChip = document.createElement("div");
+		hoverChip.setAttribute("data-forge-hover", "chip");
+		hoverChip.style.cssText =
+			"position:fixed;display:none;pointer-events:none;z-index:2147483647;" +
+			"box-sizing:border-box;max-width:60vw;padding:2px 7px;" +
+			"background:#1f262b;color:#83c092;border:1px solid #414c52;" +
+			"border-radius:2px;font:10.5px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;" +
+			"white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" +
+			"box-shadow:2px 2px 0 rgba(0,0,0,0.35);";
+		root.appendChild(hoverChip);
+	}
+
+	function hideHover() {
+		hoverEl = null;
+		if (hoverBox) hoverBox.style.display = "none";
+		if (hoverChip) hoverChip.style.display = "none";
+	}
+
+	function showHover(el) {
+		ensureHoverLayer();
+		var rect = el.getBoundingClientRect();
+		if (rect.width < 0.5 && rect.height < 0.5) {
+			hideHover();
+			return;
+		}
+		hoverEl = el;
+		var b = hoverBox.style;
+		b.display = "block";
+		b.left = rect.left + "px";
+		b.top = rect.top + "px";
+		b.width = rect.width + "px";
+		b.height = rect.height + "px";
+
+		hoverChip.textContent = buildSelector(el);
+		var c = hoverChip.style;
+		c.display = "block";
+		// anchor the chip to a corner of the highlighted rectangle: above the
+		// top-left edge, flipped below when the element touches the top
+		var x = Math.max(2, Math.min(rect.left, window.innerWidth - hoverChip.offsetWidth - 2));
+		var y = rect.top > 24 ? rect.top - hoverChip.offsetHeight - 3 : rect.bottom + 3;
+		c.left = Math.round(x) + "px";
+		c.top = Math.round(y) + "px";
+	}
+
+	function onPickMove(e) {
+		if (!picking) return;
+		var el = e.target;
+		if (!(el instanceof Element)) return;
+		// the overlay/chip are pointer-events:none, so target is the real element
+		if (el === hoverEl) return;
+		showHover(el);
+	}
+
+	function onPickOut(e) {
+		if (!picking) return;
+		if (!e.relatedTarget) hideHover(); // pointer left the document
+	}
+
+	function onPickScroll() {
+		if (!picking) return;
+		if (hoverEl && hoverEl.isConnected) showHover(hoverEl);
+		else hideHover();
+	}
+
+	function setPicking(on) {
+		picking = on;
+		document.documentElement.style.cursor = picking ? "crosshair" : "";
+		if (picking) {
+			document.addEventListener("mousemove", onPickMove, true);
+			document.addEventListener("mouseout", onPickOut, true);
+			window.addEventListener("scroll", onPickScroll, true);
+		} else {
+			document.removeEventListener("mousemove", onPickMove, true);
+			document.removeEventListener("mouseout", onPickOut, true);
+			window.removeEventListener("scroll", onPickScroll, true);
+			hideHover();
+			clearHighlight();
+		}
+	}
+
 	function post(msg) {
 		msg.source = "forge-iframe";
 		window.parent.postMessage(msg, "*");
@@ -150,9 +251,7 @@
 		}
 
 		if (d.type === "forge:pick") {
-			picking = !!d.on;
-			document.documentElement.style.cursor = picking ? "crosshair" : "";
-			if (!picking) clearHighlight();
+			setPicking(!!d.on);
 			return;
 		}
 
