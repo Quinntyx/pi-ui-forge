@@ -176,12 +176,17 @@ should read as if written by the designer in one sitting at the end.
 5. **Alternation discipline.** Never loop autonomously across review rounds;
    each round is driven by real user feedback. Never call `mock_review` with
    a red build — build first; the user never sees mid-edit states.
-6. **Compaction re-anchoring.** When the provider rejects an oversized
-   request (400/413), the harness compacts — evicting the oldest context
-   (where the images live) — and retries once automatically. After a
-   compaction, re-ground yourself: re-read `design-notes.md` (the contract
-   is the truth) and the latest `shots/` renders before your next build or
-   review.
+6. **Native compaction, same session.** Let Pi's native automatic compaction
+   handle context pressure in this session. If manual compaction is needed,
+   use a supported native compaction control, not a saved-file handoff or a
+   final response. Never terminate or replace the designer because of a
+   context percentage or review count. After compaction, re-read
+   `design-notes.md`, the current source as needed, and the latest relevant
+   renders and annotations; preserve pending feedback and approval status,
+   then continue the user-driven review loop. Approval remains pending until
+   the user approves the exact final version. Do not interrupt a blocking
+   `mock_review` for context maintenance. Not every 400/413 is context
+   overflow: verify the actual error and recovery before continuing.
 7. **Transcript insulation.** Whatever your run returns to the user (or, in
    subagent setups, to the calling agent) is a pointer to the contract plus
    one short paragraph — not a design dump. All detail lives in
