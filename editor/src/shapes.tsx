@@ -77,13 +77,16 @@ export class CommentPinShapeUtil extends BaseBoxShapeUtil<CommentPinShape> {
 		const state = useSyncState();
 		const comment = state.comments.find((c) => c.id === shape.props.commentId);
 		const color = PIN_COLORS[(shape.props.num - 1 + PIN_COLORS.length) % PIN_COLORS.length];
+		// the pin's own tooltip duplicates the popup (same selector, same anchor), so
+		// only one of the two is ever drawn for a given comment
+		const popupOpen = state.popup?.commentId === shape.props.commentId;
 		return (
 			<HTMLContainer style={{ pointerEvents: "all" }}>
 				<div className="pin-wrap">
 					<div className={`pin c-${color}`} style={{ width: 17, height: 17 }}>
 						{shape.props.num}
 					</div>
-					{comment && (comment.selector || comment.text) && <PinTip comment={comment} />}
+					{comment && !popupOpen && (comment.selector || comment.text) && <PinTip comment={comment} />}
 				</div>
 			</HTMLContainer>
 		);
