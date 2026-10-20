@@ -37,6 +37,21 @@ export interface ForgeDrawing {
 	skipped?: boolean;
 }
 
+/** A pasted/imported image, as the bytes the user actually pasted. `path` is
+ *  filled in by the server (it parks the bytes under /tmp so the model can open
+ *  the exact reference); client-side it travels as a data URL. */
+export interface ForgeImage {
+	page: string | null;
+	dataUrl: string;
+}
+
+/** Same thing before it has left the editor. */
+export interface PasteImage {
+	/** page that was in view when it was pasted, when the mock has exactly one */
+	page: string | null;
+	dataUrl: string;
+}
+
 export interface SendBackPayload {
 	reviewId: number;
 	picked: string[];
@@ -51,6 +66,8 @@ export interface SendBackPayload {
 		image: string | null;
 		text?: string;
 	}[];
+	/** reference images pasted or dropped onto the canvas (kept across rounds) */
+	images: ForgeImage[];
 	canvasImage: string | null;
 	approved: boolean;
 }

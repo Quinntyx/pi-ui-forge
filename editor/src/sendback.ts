@@ -17,7 +17,7 @@ import { editors } from "./canvas";
 import type { Editor } from "tldraw";
 import { isForgeShape } from "./shapes";
 import { getState } from "./store";
-import type { ForgeDrawing, SendBackPayload } from "./types";
+import type { ForgeDrawing, ForgeImage, SendBackPayload } from "./types";
 
 async function cropAroundBounds(
 	capture: string,
@@ -107,7 +107,8 @@ async function collectDrawings(canvasId: string): Promise<ForgeDrawing[]> {
 	const capture = await captureCanvas();
 	const shapes = [...editor.getCurrentPageShapeIds()]
 		.map((id) => editor.getShape(id))
-		.filter((s): s is NonNullable<typeof s> => !!s && !isForgeShape(s));
+		// images are references, not markup: they travel as files, not as crops
+		.filter((s): s is NonNullable<typeof s> => !!s && !isForgeShape(s) && s.type !== "image");
 
 	return Promise.all(
 		shapes.map(async (shape) => {
@@ -146,6 +147,10 @@ export async function buildSendBack(reviewId: number, approved: boolean): Promis
 
 	const drawingGroups = await Promise.all(state.world.mocks.map((m) => collectDrawings(m.id)));
 	const drawings = drawingGroups.flat();
+	// reference images come from the paste/drop handler (store.ts), not from
+	// canvas shapes: the shape only holds an asset id, and the model needs the
+	// bytes the user actually pasted
+	const images: ForgeImage[] = state.pasted.map((p) => ({ page: p.page, dataUrl: p.dataUrl }));
 
 	const canvasImage = await captureCanvas();
 
@@ -159,6 +164,7 @@ export async function buildSendBack(reviewId: number, approved: boolean): Promis
 			image: d.image,
 			text: d.text,
 		})),
+		images,
 		canvasImage,
 		approved,
 	};

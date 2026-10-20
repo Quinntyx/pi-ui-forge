@@ -13,7 +13,7 @@ import {
 } from "./annotate";
 import { buildSendBack } from "./sendback";
 import { connect, onMessage, send } from "./ws";
-import { getState, setState, useSyncState } from "./store";
+import { getState, setState, useSyncState, addPastedImage } from "./store";
 import { applyPageHashes } from "./hashes";
 import { CommentPop, DockStack, ProgressBar, PromptStack, StatusLine, StylePanel, TopBar } from "./chrome";
 import type { World } from "./types";
@@ -109,6 +109,34 @@ export default function App() {
 		window.addEventListener("keydown", onKey);
 		return () => window.removeEventListener("keydown", onKey);
 	}, [activeEditor]);
+
+	// Reference images: keep the clipboard/drop bytes ourselves. tldraw also
+	// receives these events and puts the picture on the canvas — that copy is
+	// for the user's eyes; this copy is what the model gets a path to.
+	useEffect(() => {
+		const keep = (files: FileList | null | undefined) => {
+			const { world, activeCanvas } = getState();
+			// page attribution: the canvas in view (or the only one) when it has a single page
+			const mock = world.mocks.find((m) => m.id === activeCanvas) ?? (world.mocks.length === 1 ? world.mocks[0] : undefined);
+			const page = mock && mock.pages.length === 1 ? mock.pages[0] : null;
+			for (const file of files ?? []) {
+				if (!file.type.startsWith("image/")) continue;
+				const reader = new FileReader();
+				reader.onload = () => {
+					if (typeof reader.result === "string") addPastedImage(reader.result, page);
+				};
+				reader.readAsDataURL(file);
+			}
+		};
+		const onPaste = (e: ClipboardEvent) => keep(e.clipboardData?.files);
+		const onDrop = (e: DragEvent) => keep(e.dataTransfer?.files);
+		window.addEventListener("paste", onPaste);
+		window.addEventListener("drop", onDrop);
+		return () => {
+			window.removeEventListener("paste", onPaste);
+			window.removeEventListener("drop", onDrop);
+		};
+	}, []);
 
 	const doSend = async () => {
 		setBusy(true);

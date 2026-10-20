@@ -25,6 +25,7 @@ import * as http from "node:http";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as crypto from "node:crypto";
+import * as os from "node:os";
 import { spawn, type ChildProcess } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { WebSocketServer, WebSocket } from "ws";
@@ -68,6 +69,9 @@ interface ReviewPayload {
 	description: string;
 	comments: { text: string; page: string | null; selector: string | null }[];
 	drawings: { page: string | null; image: string | null; text?: string }[];
+	/** reference images sitting on the canvas (pasted/dropped), as data URLs;
+	 *  older editor builds omit the field */
+	images?: { page: string | null; dataUrl: string }[];
 	canvasImage: string | null;
 }
 
@@ -549,7 +553,7 @@ function editorUrl(s: ForgeSession): string {
 }
 
 function emptyPayload(): ReviewPayload {
-	return { picked: [], description: "", comments: [], drawings: [], canvasImage: null };
+	return { picked: [], description: "", comments: [], drawings: [], images: [], canvasImage: null };
 }
 
 // --- capture helpers -------------------------------------------------------------------------
@@ -597,12 +601,44 @@ function imageBlock(dataUrl: string): { type: "image"; data: string; mimeType: s
 function saveImage(cwd: string, subdir: string, name: string, dataUrl: string): string | null {
 	const match = /^data:(image\/[a-z+]+);base64,(.+)$/.exec(dataUrl);
 	if (!match) return null;
-	const ext = match[1] === "image/jpeg" ? "jpg" : match[1] === "image/webp" ? "webp" : "png";
+	const ext = imageExt(match[1]);
 	const dir = path.join(cwd, subdir);
 	fs.mkdirSync(dir, { recursive: true });
 	const file = path.join(dir, `${name}.${ext}`);
 	fs.writeFileSync(file, Buffer.from(match[2], "base64"));
 	return file;
+}
+
+function imageExt(mime: string): string {
+	return mime === "image/jpeg" ? "jpg" : mime === "image/webp" ? "webp" : mime === "image/gif" ? "gif" : "png";
+}
+
+/**
+ * Paste a reference image onto disk, outside the mock folder.
+ *
+ * Reference images are re-sent with EVERY round while they sit on the canvas,
+ * so the file is content-addressed: the same pasted bytes always land on the
+ * same path and the model sees a stable reference instead of a new copy per
+ * round. Kept in the temp dir and 0600 — screenshots often carry things the
+ * model should see but the repo should not.
+ */
+function saveReferenceImage(dataUrl: string): string | null {
+	const match = /^data:(image\/[a-z+]+);base64,(.+)$/.exec(dataUrl);
+	if (!match) return null;
+	const body = Buffer.from(match[2], "base64");
+	const hash = crypto.createHash("sha1").update(body).digest("hex").slice(0, 16);
+	const dir = path.join(os.tmpdir(), "pi-forge-refs");
+	const file = path.join(dir, `${hash}.${imageExt(match[1])}`);
+	try {
+		if (!fs.existsSync(file)) {
+			fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
+			fs.writeFileSync(file, body, { mode: 0o600 });
+		}
+		return file;
+	} catch (error) {
+		console.error("forge: failed to save reference image:", error);
+		return null;
+	}
 }
 
 /**
@@ -616,10 +652,20 @@ function saveReviewArtifacts(
 	payload: ReviewPayload,
 	s: ForgeSession,
 	pageShots: { page: string; image: string }[],
-): { images: { canvas: string | null; pages: Record<string, string> } } {
+): {
+	images: {
+		canvas: string | null;
+		pages: Record<string, string>;
+		references: { page: string | null; path: string }[];
+	};
+} {
 	s.shotCounter += 1;
 	const dir = `shots/r${s.shotCounter}`;
-	const images: { canvas: string | null; pages: Record<string, string> } = { canvas: null, pages: {} };
+	const images: {
+		canvas: string | null;
+		pages: Record<string, string>;
+		references: { page: string | null; path: string }[];
+	} = { canvas: null, pages: {}, references: [] };
 	try {
 		if (payload.canvasImage) {
 			images.canvas = saveImage(cwd, dir, "canvas", payload.canvasImage) ?? null;
@@ -633,6 +679,10 @@ function saveReviewArtifacts(
 			if (!d.image) continue;
 			const file = saveImage(cwd, "ann", `r${s.shotCounter}-${d.page ?? "canvas"}-${i++}`, d.image);
 			if (file) d.image = file; // replace dataURL with the path in the result JSON
+		}
+		for (const image of payload.images ?? []) {
+			const file = saveReferenceImage(image.dataUrl);
+			if (file) images.references.push({ page: image.page, path: file });
 		}
 	} catch (error) {
 		console.error("forge: failed to save review artifacts:", error);

@@ -168,7 +168,12 @@ should read as if written by the designer in one sitting at the end.
    see the speed rules above for state and data.
 4. **`mock_review` is the only handover.** When it returns, act on exactly
    that feedback (picked pages, description, comments with selectors, draw
-   crops), rebuild, and call `mock_review` again. The user approving or
+   crops, reference images), rebuild, and call `mock_review` again. Reference
+   images the user pasted or dropped onto the canvas come back under
+   `images.references` as absolute paths (`/tmp/pi-forge-refs/<hash>.<ext>`) —
+   `read` the ones you need: they are the exact pixels the user pointed at,
+   unlike the canvas shot where they overlap other markup. The user approving
+   or
    closing the window ends the session: run the **finalize pass** (wholesale
    rewrite of `design-notes.md` per the structure above) and settle with a
    one-paragraph summary pointing at the contract file and the final render
