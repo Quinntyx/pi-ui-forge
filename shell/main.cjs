@@ -25,6 +25,29 @@ const urlArg = args.find((a) => a.startsWith("http"));
 
 const { app, BrowserWindow } = require("electron");
 const WebSocket = require("ws");
+const { existsSync } = require("node:fs");
+
+// ── compositor policy ────────────────────────────────────────────────────────
+// Native Wayland + NVIDIA: Chromium's display compositor hands buffers to the
+// compositor without explicit sync (this Electron build carries no linux-drm-
+// syncobj support — `WaylandLinuxDrmSyncobj` is absent from the binary), so a
+// damage region can reach the compositor before it is rastered. Symptom: blocks
+// of the window come up black for a frame, and floating chrome that lands in the
+// same damage region (tool dock, style panel) blinks out and back even though
+// the DOM never changed. Matches niri-wm/niri discussion #3777 (Electron under
+// native Wayland on NVIDIA), where software compositing is the working fix.
+//
+// Default on that combination: software compositing. Escapes:
+//   FORGE_GPU=1   keep GPU compositing (fast, artifacts may return)
+//   FORGE_X11=1   run through XWayland instead (also avoids the race, but a
+//                 fractional-scale display, e.g. niri scale 1.5, goes blurry)
+const onWayland = !!(process.env.WAYLAND_DISPLAY || process.env.XDG_SESSION_TYPE === "wayland");
+const hasNvidia = existsSync("/proc/driver/nvidia/version");
+if (process.env.FORGE_X11 === "1") {
+	app.commandLine.appendSwitch("ozone-platform", "x11");
+} else if (onWayland && hasNvidia && process.env.FORGE_GPU !== "1") {
+	app.commandLine.appendSwitch("disable-gpu-compositing");
+}
 
 let win = null;
 let ws = null;
@@ -171,12 +194,20 @@ function createWindow() {
 		height: 1024,
 		title: "UI Mock Forge",
 		autoHideMenuBar: true,
-		backgroundColor: "#1c1e26",
+		// stay unmapped until the editor has painted once — otherwise the window
+		// background is on screen for a beat before the page arrives
+		show: false,
+		// only visible during resizes; match the editor's default (light) surface
+		backgroundColor: "#fdf6e3",
 		webPreferences: {
 			contextIsolation: true,
 			nodeIntegration: false,
+			// the window is often unfocused while the agent works; throttled
+			// rendering under explicit sync shows stale frames on refocus
+			backgroundThrottling: false,
 		},
 	});
+	win.once("ready-to-show", () => win.show());
 	win.loadURL(urlArg);
 	win.webContents.on("did-fail-load", (_e, code, desc, url) => {
 		safeLog(`forge shell: did-fail-load ${code} ${desc} ${url}`);
@@ -200,6 +231,10 @@ app.on("window-all-closed", () => {
 });
 
 app.whenReady().then(() => {
+	if (process.env.FORGE_X11 === "1") safeLog("forge shell: compositor x11 (XWayland)");
+	else if (onWayland && hasNvidia && process.env.FORGE_GPU !== "1") {
+		safeLog("forge shell: compositor software (Wayland + NVIDIA; FORGE_GPU=1 to keep GPU compositing)");
+	}
 	createWindow();
 	connect();
 });

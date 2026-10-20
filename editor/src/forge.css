@@ -2,7 +2,16 @@
    no status pill / identity / banner hint / version, icon-only send-back,
    approve in topbar corner, banner above prompt bar, popup comment editor,
    tldraw-exact vertical style panel, progress state, multiple state pages. */
-* { box-sizing: border-box; margin: 0; }.forge-root {
+/* The window paints a base colour before React has painted and behind any
+   region the compositor has not filled yet (see shell/main.cjs backgroundColor).
+   Keep the document opaque and theme-coloured: a half-composited frame shows
+   paper, never black. */
+html {
+	background: #fdf6e3;
+}
+html:has(.forge-root:not(.light)) {
+	background: #242b31;
+}* { box-sizing: border-box; margin: 0; }.forge-root {
 	--bg0: #242b31; --bg1: #2d353b; --bg2: #343f44; --bg3: #414c52;
 	--fg: #d3c6aa; --faint: #859289; --grey: #7a8478;
 	--red: #e67e80; --orange: #e69875; --yellow: #dbbc7f;

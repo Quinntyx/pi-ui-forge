@@ -32,7 +32,8 @@ user's main session or a dedicated design subagent.
   CSS-selector addressing); `editor/dist` is committed prebuilt (pi git
   installs run `npm install`, not builds)
 - `shell/` — minimal Electron main (one BrowserWindow, quit-on-close,
-  Wayland-friendly, answers full-window capture requests)
+  Wayland-friendly compositor policy — see [Display switches](#display--compositor-switches),
+  answers full-window capture requests)
 - `scripts/` — `build.mjs` (esbuild mock-app build written into each mock
   folder), `runtime.js` (injected into every mock page: capture +
   inspect-pick + highlight), `smoke-server.mjs` (end-to-end smoke test
@@ -90,3 +91,24 @@ npm run smoke              # end-to-end smoke test (needs a display; tmux OK)
 ```
 
 Typecheck the extension and editor with `npm run check`.
+
+## Display / compositor switches
+
+The Electron window runs on native Wayland when the session has one. Native
+Wayland on **NVIDIA** is where Linux Chromium has its long-standing
+buffer-sync weakness: this Electron build carries no `linux-drm-syncobj-v1`
+support, so damage can reach the compositor before it is rastered. The symptom
+is exactly what it looks like — blocks of the window go black for a frame, and
+floating chrome (tool dock, style panel) blinks out and back while panning or
+zooming, even though the React tree never remounts. So the shell defaults to
+**software compositing** on that combination, measured at 60 fps for a
+two-page canvas pan/zoom loop. Environment switches (read at spawn):
+
+| variable | effect |
+| --- | --- |
+| `FORGE_GPU=1` | keep GPU compositing (fastest; the artifacts can come back) |
+| `FORGE_X11=1` | run through XWayland instead — also avoids the race, but a fractional-scale display (e.g. niri at 1.5) goes blurry |
+
+Scrolling, zooming and iframe repaints all live in the canvas, so if you are
+bisecting a rendering problem, try `FORGE_GPU=1`, then `FORGE_X11=1`, then
+neither.

@@ -17,7 +17,7 @@ const require = createRequire(import.meta.url);
 const here = dirname(fileURLToPath(import.meta.url));
 
 // Paths embedded by the extension when it wrote this file.
-const PLUGIN_DIR = "/home/zlare/.config/pi/profiles/design-subagents/git/git.quinntyx.dev/quinntyx/pi-ui-forge";
+const PLUGIN_DIR = "/home/zlare/docs/src/pi-ui-forge/main";
 
 function loadEsbuild() {
 	const candidates = [join(PLUGIN_DIR, "node_modules", "esbuild"), "esbuild"];

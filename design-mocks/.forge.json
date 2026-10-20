@@ -1,6 +1,6 @@
 {
-  "port": 37541,
-  "token": "ceb6dc8e618421862c2971dd54f772b7",
-  "pluginDir": "/home/zlare/.config/pi/profiles/design-subagents/git/git.quinntyx.dev/quinntyx/pi-ui-forge",
-  "editorUrl": "http://127.0.0.1:37541/?token=ceb6dc8e618421862c2971dd54f772b7"
+  "port": 46861,
+  "token": "252a4ca19b30fce47c8c03a063334fea",
+  "pluginDir": "/home/zlare/docs/src/pi-ui-forge/main",
+  "editorUrl": "http://127.0.0.1:46861/?token=252a4ca19b30fce47c8c03a063334fea"
 }
