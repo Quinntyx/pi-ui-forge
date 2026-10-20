@@ -442,12 +442,49 @@ function writeForgeFiles(cwd: string, port: number, token: string): void {
 	}
 }
 
+/**
+ * Forward a child stream to the host terminal one COMPLETE line at a time.
+ *
+ * pi's TUI repaints incrementally, so raw chunked writes (Electron emits its
+ * warnings in arbitrary slices, sometimes mid-line) get baked into whatever
+ * frame was on screen and corrupt it. Buffering to newlines keeps each write
+ * a single clean line.
+ */
+function forwardChildLines(prefix: string, stream: NodeJS.ReadableStream | null): void {
+	if (!stream) return;
+	let buffer = "";
+	stream.on("data", (chunk: Buffer | string) => {
+		buffer += String(chunk);
+		let newline = buffer.indexOf("\n");
+		while (newline !== -1) {
+			const line = buffer.slice(0, newline).replace(/\r$/, "");
+			buffer = buffer.slice(newline + 1);
+			if (line.length > 0) console.error(`${prefix} ${line}`);
+			newline = buffer.indexOf("\n");
+		}
+	});
+	// don't strand a trailing fragment when the shell exits
+	stream.on("end", () => {
+		if (buffer.length > 0) console.error(`${prefix} ${buffer}`);
+		buffer = "";
+	});
+}
+
 function spawnElectron(bin: string, s: ForgeSession): void {
 	const child = spawn(bin, ["--ozone-platform-hint=auto", shellMainPath(), editorUrl(s)], {
 		stdio: ["ignore", "pipe", "pipe"],
+		env: {
+			...process.env,
+			// Electron raises a multi-line dev-only security warning (no CSP on
+			// the loopback renderer). shell/main.cjs bridges renderer console
+			// warnings to stdout, so the block lands in pi's TUI. The window only
+			// ever loads our own 127.0.0.1 server and this app is never packaged,
+			// so suppress it at the source.
+			ELECTRON_DISABLE_SECURITY_WARNINGS: "true",
+		},
 	});
-	child.stdout?.on("data", (d) => process.stdout.write(`[forge-shell] ${d}`));
-	child.stderr?.on("data", (d) => process.stderr.write(`[forge-shell] ${d}`));
+	forwardChildLines("[forge-shell]", child.stdout);
+	forwardChildLines("[forge-shell]", child.stderr);
 	s.electron = child;
 	child.on("exit", () => {
 		if (session !== s) return;
