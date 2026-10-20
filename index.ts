@@ -453,20 +453,52 @@ function writeForgeFiles(cwd: string, port: number, token: string): void {
 function forwardChildLines(prefix: string, stream: NodeJS.ReadableStream | null): void {
 	if (!stream) return;
 	let buffer = "";
+	// pi draws its interface on this stdio, so a log storm in the shell would
+	// take the terminal with it. Collapse runs of one repeated line into a
+	// single counted entry and stop after a sane number of distinct lines.
+	const REPEAT_LIMIT = 3;
+	const LINE_LIMIT = 180;
+	let current: string | null = null;
+	let count = 0;
+	let printed = 0;
+	const note = (line: string) => {
+		if (printed >= LINE_LIMIT) return;
+		printed += 1;
+		console.error(`${prefix} ${line}`);
+	};
+	const commit = () => {
+		if (current === null) return;
+		note(current);
+		if (count > REPEAT_LIMIT) note(`${current} — repeated ${count}× (suppressed)`);
+		current = null;
+		count = 0;
+	};
+	const feed = (line: string) => {
+		// driver addresses change every message; hold them still so repeats collapse
+		const head = line.replace(/0x[0-9a-f]+/gi, "0x…").slice(0, 300);
+		if (head === current) {
+			count += 1;
+			return;
+		}
+		commit();
+		current = head;
+		count = 1;
+	};
 	stream.on("data", (chunk: Buffer | string) => {
 		buffer += String(chunk);
 		let newline = buffer.indexOf("\n");
 		while (newline !== -1) {
 			const line = buffer.slice(0, newline).replace(/\r$/, "");
 			buffer = buffer.slice(newline + 1);
-			if (line.length > 0) console.error(`${prefix} ${line}`);
+			if (line.length > 0) feed(line);
 			newline = buffer.indexOf("\n");
 		}
 	});
 	// don't strand a trailing fragment when the shell exits
 	stream.on("end", () => {
-		if (buffer.length > 0) console.error(`${prefix} ${buffer}`);
+		if (buffer.length > 0) feed(buffer);
 		buffer = "";
+		commit();
 	});
 }
 

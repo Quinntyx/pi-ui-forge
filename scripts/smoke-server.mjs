@@ -1,6 +1,10 @@
 // Smoke test harness: load the forge extension (as pi would, via jiti),
 // exercise mock_open → mock_screenshot against a real editor + Electron
 // window, print results, tear down. Not part of the runtime.
+//
+// DIY: seed the mock folder first, e.g.
+//   mkdir -p /tmp/forge-smoke && cp -r design-mocks/app design-mocks/build.mjs /tmp/forge-smoke/
+// and build a page label that exists in app/pages/ (this harness asks for `home`).
 import { createRequire } from "node:module";
 
 const require = createRequire("/home/zlare/.npm-global/lib/node_modules/@earendil-works/pi-coding-agent/");

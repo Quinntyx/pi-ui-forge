@@ -216,14 +216,60 @@ function createWindow() {
 		safeLog(`forge shell: loaded ${urlArg}`);
 	});
 	win.webContents.on("console-message", (event) => {
-		if (event.level === "error" || event.level === "warning") {
-			safeLog(`forge shell renderer[${event.level}]: ${event.message?.slice(0, 500) ?? ""}`);
-		}
+		logRendererConsole(event.level, event.message);
 	});
 	win.on("closed", () => {
 		win = null;
+		flushRendererConsole();
 		app.quit();
 	});
+}
+
+// ── renderer console bridging ────────────────────────────────────────────────
+// The renderer console is piped to the parent's stdout, which is the terminal
+// pi draws its whole interface on. A renderer that logs per frame (tldraw's
+// WebGL warnings do, once a framebuffer goes bad) therefore floods the TUI, so
+// keep the first few of each distinct message and count the rest silently.
+const RENDERER_REPEAT_LIMIT = 3;
+const RENDERER_LINE_LIMIT = 120;
+const rendererSeen = new Map(); // normalized message -> { level, count }
+let rendererLines = 0;
+let rendererDropped = 0;
+
+const normalizeRendererMessage = (message) =>
+	String(message ?? "")
+		.replace(/0x[0-9a-f]+/gi, "0x…") // WebGL/driver addresses differ per message
+		.replace(/\s+/g, " ")
+		.trim()
+		.slice(0, 240);
+
+function logRendererConsole(level, message) {
+	if (level !== "error" && level !== "warning") return;
+	const head = normalizeRendererMessage(message);
+	if (!head) return;
+	const entry = rendererSeen.get(head) ?? { level, count: 0 };
+	entry.count += 1;
+	rendererSeen.set(head, entry);
+	if (entry.count > RENDERER_REPEAT_LIMIT || rendererLines >= RENDERER_LINE_LIMIT) {
+		rendererDropped += 1;
+		return;
+	}
+	rendererLines += 1;
+	const repeat = entry.count > 1 ? ` (repeat ${entry.count})` : "";
+	safeLog(`forge shell renderer[${level}]: ${head}${repeat}`);
+}
+
+// called when the window goes away: say what was swallowed, so the log stays
+// diagnosable without being a firehose
+function flushRendererConsole() {
+	const repeated = [...rendererSeen.entries()]
+		.filter(([, entry]) => entry.count > RENDERER_REPEAT_LIMIT)
+		.sort((a, b) => b[1].count - a[1].count)
+		.slice(0, 4);
+	for (const [head, entry] of repeated) {
+		safeLog(`forge shell renderer[${entry.level}]: ${head} — repeated ${entry.count}× (suppressed)`);
+	}
+	if (rendererDropped > 0) safeLog(`forge shell: ${rendererDropped} renderer messages suppressed`);
 }
 
 app.on("window-all-closed", () => {
