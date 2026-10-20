@@ -28,7 +28,7 @@ export interface AppState {
 	comments: ForgeComment[];
 	/** popup comment editor anchored at a picked element */
 	popup: PopupState | null;
-	/** live agent activity from pi-tool-tree (label, phase, running calls) */
+	/** live agent activity from pi-activity (label, phase, running calls) */
 	activity: AgentActivity | null;
 	/** wall-clock ms timestamp when the current working stretch began (null while the agent is blocked in review) */
 	workStartedAt: number | null;

@@ -77,11 +77,23 @@ export type EditorToHost =
 
 export type Phase = "idle" | "review" | "closed";
 
-/** Live agent activity (pi-tool-tree), shown on the working screen. */
-export interface AgentActivity {
+/** Live agent activity (pi-activity), shown on the working screen. */
+export interface ActivityCall {
+	toolName: string;
+	/** a label the model declared for this call; null when it merely inherited one */
 	label: string | null;
-	phase: string;
+	/** one-line argument preview from the provider, e.g. the file being read */
+	preview: string | null;
+	elapsedMs: number;
+}
+
+export interface AgentActivity {
+	/** the label the model declared for this phase; null when it declared none
+	 *  (pi-activity's own "working" default is not a declaration) */
+	label: string | null;
+	phase: "idle" | "waiting" | "thinking" | "responding" | "tool" | string;
 	isWorking: boolean;
-	calls: string[];
+	isThinking: boolean;
+	calls: ActivityCall[];
 	elapsedMs: number;
 }

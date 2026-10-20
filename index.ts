@@ -19,8 +19,8 @@
  * All session data lives under the subagent's cwd (the mock folder). See
  * PLAN.md and skills/design-subagent.
  */
-import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { Type } from "typebox";
+import type { ExtensionAPI, ExtensionContext, ToolDefinition } from "@earendil-works/pi-coding-agent";
+import { type TSchema, Type } from "typebox";
 import * as http from "node:http";
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -76,6 +76,18 @@ interface ReviewResult {
 	closed: boolean;
 	aborted?: boolean;
 	payload: ReviewPayload;
+}
+
+/** What the editor's working screen shows. Mirrors pi-activity's snapshot, minus
+ *  everything the editor does not draw. `label` is null when the model declared
+ *  no label of its own (the provider default is not a label). */
+interface ToolActivity {
+	label: string | null;
+	phase: string;
+	isWorking: boolean;
+	isThinking: boolean;
+	calls: { toolName: string; label: string | null; preview: string | null; elapsedMs: number }[];
+	elapsedMs: number;
 }
 
 interface ForgeSession {
@@ -668,8 +680,79 @@ function deriveWorldMock(
 
 // --- extension -----------------------------------------------------------------------------------
 
+// --- pi-activity bridge -------------------------------------------------------------------------
+//
+// pi-activity publishes its query API on globalThis (the legacy pi-tool-tree keys
+// point at the same object). Read it lazily: extension load order decides who
+// publishes first, and pi-activity may come up after this plugin.
+interface ActivityRunningCall {
+	toolCallId?: string;
+	toolName?: string;
+	label?: string;
+	elapsedMs?: number;
+}
+interface ActivitySnapshot {
+	label?: string | null;
+	phase?: string;
+	isWorking?: boolean;
+	isThinking?: boolean;
+	isRunningTool?: boolean;
+	calls?: ActivityRunningCall[];
+	run?: { elapsedMs?: number };
+}
+interface ActivityProviderApi {
+	version?: number;
+	param?: string;
+	defaultLabel?: string;
+	enabled?: () => boolean;
+	/** Opt-in labelling hook: wrap a tool definition before registering it so the
+	 *  model can tag its calls with an `activity` label. No-op when the provider
+	 *  has the feature switched off, so it is safe to call unconditionally. */
+	wrapTool?: <T>(tool: T) => T;
+	getActivity?: () => ActivitySnapshot;
+	subscribe?: (fn: (activity: ActivitySnapshot, change: unknown) => void) => () => void;
+}
+const activityProvider = (): ActivityProviderApi | undefined =>
+	(globalThis as unknown as Record<symbol, ActivityProviderApi | undefined>)[Symbol.for("pi-activity:api")];
+
+// mirrored from the host so stored tools keep their exact registered type
+type ForgeToolDefinition = Parameters<ExtensionAPI["registerTool"]>[0];
+
 export default function (pi: ExtensionAPI) {
-	pi.registerTool({
+	// Register through pi-activity's labelling hook when it is available. Builtin
+	// tools get the `activity` parameter injected by pi-activity itself; plugin
+	// tools only get it when the plugin wraps them, which is what carries the
+	// model's declared label on mock_build/mock_review into the editor.
+	//
+	// The wrapper is generic in the tool's schema so the definition literals below
+	// keep their contextual typing: a `Parameters<…>` alias drops the schema
+	// generic and leaves `params` as `unknown` inside every tool body.
+	const forgeTools: { tool: ForgeToolDefinition; wrapped: boolean }[] = [];
+	const registerTool = <TParams extends TSchema, TDetails, TState>(
+		tool: ToolDefinition<TParams, TDetails, TState>,
+	): void => {
+		const api = activityProvider();
+		const wrapped = api?.wrapTool ? api.wrapTool(tool) : tool;
+		pi.registerTool(wrapped);
+		forgeTools.push({ tool: tool as unknown as ForgeToolDefinition, wrapped: Boolean(api?.wrapTool) });
+	};
+	// pi-activity may publish its API after this plugin registers; wrap late so a
+	// load-order flip cannot cost the labels. Registration reactivates tools, so
+	// restore the caller's selection like pi-activity does for builtins.
+	pi.on("session_start", async () => {
+		const api = activityProvider();
+		if (!api?.wrapTool || forgeTools.every((entry) => entry.wrapped)) return;
+		const active = pi.getActiveTools?.();
+		for (const entry of forgeTools) {
+			if (entry.wrapped) continue;
+			entry.tool = api.wrapTool(entry.tool);
+			entry.wrapped = true;
+			pi.registerTool(entry.tool);
+		}
+		if (active) pi.setActiveTools?.(active);
+	});
+
+	registerTool({
 		name: "mock_open",
 		label: "Open mock editor",
 		description:
@@ -692,7 +775,7 @@ export default function (pi: ExtensionAPI) {
 		},
 	});
 
-	pi.registerTool({
+	registerTool({
 		name: "mock_build",
 		label: "Build mock",
 		description:
@@ -762,7 +845,7 @@ export default function (pi: ExtensionAPI) {
 		},
 	});
 
-	pi.registerTool({
+	registerTool({
 		name: "mock_screenshot",
 		label: "Screenshot mock",
 		description:
@@ -796,7 +879,7 @@ export default function (pi: ExtensionAPI) {
 		},
 	});
 
-	pi.registerTool({
+	registerTool({
 		name: "mock_review",
 		label: "Ask user to review mock",
 		description:
@@ -944,46 +1027,70 @@ export default function (pi: ExtensionAPI) {
 
 	// --- live agent activity → editor progress -------------------------------
 	//
-	// Preferred source: pi-activity's API (the model-declared label,
-	// running calls, phase). The tool_call summarizer below is only a fallback
-	// for sessions without pi-activity.
-	interface ToolTreeActivity {
-		label: string | null;
-		phase: string;
-		isWorking: boolean;
-		calls: string[];
-		elapsedMs: number;
-	}
-	interface ToolTreeApi {
-		getActivity?: () => Record<string, unknown>;
-		subscribe?: (fn: (activity: Record<string, unknown>, change: unknown) => void) => () => void;
-	}
-	const activityApi = (): ToolTreeApi | undefined =>
-		(globalThis as unknown as Record<symbol, ToolTreeApi | undefined>)[Symbol.for("pi-activity:api")];
+	// Source: pi-activity's query API (model-declared labels, phases, running
+	// calls). The `tool_call` summarizer below is only a fallback for hosts that
+	// load no pi-activity at all.
+	//
+	// pi-activity labels a phase from the `activity` argument the model tags each
+	// call with, and falls back to its own `defaultLabel` ("working") when the
+	// model declares nothing. Forwarding that default verbatim is what made the
+	// editor read "working" forever, so the payload separates "a label the model
+	// chose" from "the provider default" and carries the phase plus each running
+	// call's own label/preview for the editor to fall back on.
+	const toActivity = (raw: ActivitySnapshot, api: ActivityProviderApi | undefined): ToolActivity => {
+		const fallbackLabel = api?.defaultLabel ?? "working";
+		const declared = (raw.label ?? "").trim();
+		const calls = (raw.calls ?? []).map((call) => {
+			const label = (call.label ?? "").trim();
+			return {
+				toolName: call.toolName ?? "tool",
+				// a per-call label is only worth showing when the model picked it
+				label: label && label !== fallbackLabel ? label : null,
+				// pi-activity's snapshot carries no arguments, so the preview comes
+				// from the host's own tool_execution_start args (see callPreviews)
+				preview: call.toolCallId ? (callPreviews.get(call.toolCallId) ?? null) : null,
+				elapsedMs: Math.round(call.elapsedMs ?? 0),
+			};
+		});
+		return {
+			label: declared && declared !== fallbackLabel ? declared : null,
+			phase: raw.phase ?? "waiting",
+			isWorking: raw.isWorking !== false,
+			isThinking: raw.isThinking === true,
+			calls,
+			elapsedMs: Math.round(raw.run?.elapsedMs ?? 0),
+		};
+	};
 
 	let usingActivityApi = false;
+	let unsubscribeActivity: (() => void) | null = null;
 	const subscribeActivityApi = (): boolean => {
-		const api = activityApi();
+		if (usingActivityApi) return true;
+		const api = activityProvider();
 		if (!api?.subscribe) return false;
-		api.subscribe((activity) => {
-			usingActivityApi = true;
+		usingActivityApi = true;
+		unsubscribeActivity = api.subscribe((activity) => {
 			if (!session || session.closed) return;
-			const calls = Array.isArray(activity.calls)
-				? (activity.calls as { toolName?: string }[]).map((c) => c.toolName ?? "tool")
-				: [];
-			const run = (activity.run ?? {}) as { elapsedMs?: number };
-			const payload: ToolTreeActivity = {
-				label: (activity.label as string | null) ?? null,
-				phase: (activity.phase as string) ?? "working",
-				isWorking: activity.isWorking !== false,
-				calls,
-				elapsedMs: run.elapsedMs ?? 0,
-			};
-			broadcastEditors(session, { type: "activity", activity: payload });
+			broadcastEditors(session, { type: "activity", activity: toActivity(activity, api) });
 		});
+		// subscribe() only fires on change; seed the current state so late
+		// connections and a mid-run editor restart do not stare at nothing
+		const now = api.getActivity?.();
+		if (now && session && !session.closed) {
+			broadcastEditors(session, { type: "activity", activity: toActivity(now, api) });
+		}
 		return true;
 	};
-	subscribeActivityApi();
+	// extension load order is not ours to control: pi-activity may publish its API
+	// after this plugin is set up, so keep asking for a while instead of giving up
+	if (!subscribeActivityApi()) {
+		let attempts = 0;
+		const poll = setInterval(() => {
+			attempts += 1;
+			if (subscribeActivityApi() || attempts >= 60) clearInterval(poll);
+		}, 1000);
+		poll.unref?.();
+	}
 
 	const activityLabel = (toolName: string, input: Record<string, unknown> | undefined): string => {
 		const arg = input ?? {};
@@ -1009,23 +1116,51 @@ export default function (pi: ExtensionAPI) {
 				return `using ${toolName}`;
 		}
 	};
-	pi.on("tool_call", (event) => {
-		if (!usingActivityApi && !subscribeActivityApi() && session && !session.closed) {
-			broadcastEditors(session, {
-				type: "activity",
-				activity: {
-					label: activityLabel(event.toolName, event.input as Record<string, unknown> | undefined),
-					phase: "tool",
-					isWorking: true,
-					calls: [event.toolName],
-					elapsedMs: 0,
-				},
-			});
+	// pi-activity's snapshot names the running calls but carries no arguments, so
+	// the host's own events supply the one-line description ("reading app/page.tsx").
+	const callPreviews = new Map<string, string>();
+	pi.on("tool_execution_start", (event) => {
+		if (event.toolCallId) {
+			callPreviews.set(
+				event.toolCallId,
+				activityLabel(event.toolName, event.args as Record<string, unknown> | undefined),
+			);
 		}
+	});
+	pi.on("tool_execution_end", (event) => {
+		if (event.toolCallId) callPreviews.delete(event.toolCallId);
+	});
+	pi.on("tool_call", (event) => {
+		if (usingActivityApi) return;
+		if (!session || session.closed) return;
+		// stand-in for pi-activity's snapshot when no provider is loaded
+		broadcastEditors(session, {
+			type: "activity",
+			activity: {
+				label: null,
+				phase: "tool",
+				isWorking: true,
+				isThinking: false,
+				calls: [
+					{
+						toolName: event.toolName,
+						label: null,
+						preview: activityLabel(event.toolName, event.input as Record<string, unknown> | undefined),
+						elapsedMs: 0,
+					},
+				],
+				elapsedMs: 0,
+			},
+		});
 	});
 
 	pi.on("session_shutdown", async () => {
 		const s = session;
+		try {
+			unsubscribeActivity?.();
+		} catch {
+			/* ignore */
+		}
 		if (!s) return;
 		try {
 			s.electron?.kill("SIGTERM");

@@ -11,6 +11,7 @@ import {
 	type Editor,
 } from "tldraw";
 import { getState, setState } from "./store";
+import type { ActivityCall } from "./types";
 import { setPickMode } from "./annotate";
 import { useSyncState } from "./useSyncState";
 
@@ -43,6 +44,31 @@ const CALL_LABELS: Record<string, string> = {
 	mock_screenshot: "checking the result",
 	mock_review: "handing over for review",
 };
+
+/** What the agent is doing when it declared no label of its own: pi-activity's
+ *  phases, in the editor's voice. */
+const PHASE_TEXT: Record<string, string> = {
+	idle: "idle",
+	waiting: "waiting on the model",
+	thinking: "thinking it through",
+	responding: "writing the mock",
+	tool: "running tools",
+};
+
+function activityCallText(call: ActivityCall): string {
+	// our own tools read better than any label
+	const known = CALL_LABELS[call.toolName];
+	if (known) return known;
+	if (call.label) return call.label;
+	const preview = call.preview?.trim();
+	if (preview) {
+		if (call.toolName === "read") return `reading ${preview}`;
+		if (call.toolName === "write" || call.toolName === "edit") return `writing ${preview}`;
+		if (call.toolName === "bash") return `running ${preview}`;
+		return preview;
+	}
+	return call.toolName.replace(/^mock_/, "");
+}
 
 function DashIcon({ kind }: { kind: "solid" | "dashed" | "dotted" | "thin" }) {
 	const base = { cx: 8.5, cy: 8.5, r: 5.2, fill: "none", stroke: "currentColor" } as const;
@@ -343,14 +369,16 @@ export function ProgressBar() {
 	const label = state.world.mocks.find((m) => m.id === state.activeCanvas)?.label;
 	const hasWorld = state.world.mocks.length > 0;
 	const act = state.activity;
-	const calls =
-		act?.calls
-			?.filter((c) => c && c !== "mock_open")
-			.map((c) => CALL_LABELS[c] ?? c.replace(/^mock_/, "")) ?? [];
+	const running = (act?.calls ?? []).filter((c) => c.toolName !== "mock_open");
+	const doing = running.map(activityCallText);
 	const main = act
-		? calls.length
-			? `${act.label?.trim() || act.phase} — ${calls.join(", ")}`
-			: act.label?.trim() || act.phase
+		? act.label
+			? doing.length
+				? `${act.label} — ${doing.join(", ")}`
+				: act.label
+			: doing.length
+				? doing.join(", ")
+				: (PHASE_TEXT[act.phase] ?? act.phase)
 		: hasWorld
 			? `revising ${label} — ${state.description || "applying the last review"}`
 			: "the design agent is starting";
