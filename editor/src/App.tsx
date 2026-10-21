@@ -5,6 +5,7 @@ import {
 	addCommentFromPick,
 	setMode,
 	setPickMode,
+	setPickHover,
 	highlight,
 	removeComment,
 	clearAllAnnotations,
@@ -39,6 +40,9 @@ export default function App() {
 						reviewNote: msg.note,
 						workStartedAt: msg.phase === "review" ? null : Date.now(),
 					});
+					// reloading while a review is open must land in annotate, not in
+					// the interact default (which hides the dock and ignores tools)
+					if (msg.phase === "review" && getState().mode === "interact") setMode("annotate");
 					break;
 				case "set-world":
 					applyWorld(msg.world);
@@ -47,7 +51,7 @@ export default function App() {
 				case "review-start":
 					// agent is now blocked waiting for the review — stop the clock
 					setState({ phase: "review", reviewId: msg.reviewId, reviewNote: msg.note, workStartedAt: null });
-					if (getState().mode === "interact") setState({ mode: "annotate" });
+					if (getState().mode === "interact") setMode("annotate");
 					break;
 				case "activity":
 					setState({ activity: msg.activity ?? null });
@@ -87,28 +91,58 @@ export default function App() {
 	};
 	usePickListener(handlePick);
 
-	// keyboard: I interact, A annotate, P pick, Enter send/commit, Esc cancel
+	// keyboard: I interact, A annotate, P pick, Esc cancel
 	useEffect(() => {
 		const onKey = (e: KeyboardEvent) => {
-			const target = e.target as HTMLElement | null;
-			const typing = target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA");
+			// Typing targets: form fields and tldraw's contenteditable text editor.
+			// A text box that is being edited must swallow I/A/P — otherwise the
+			// letters you type switch tools (and edit another shape at the same
+			// time, because the edit was never closed).
+			const target = e.target;
+			const typing =
+				(target instanceof HTMLElement &&
+					(target.tagName === "INPUT" ||
+						target.tagName === "TEXTAREA" ||
+						target.tagName === "SELECT" ||
+						target.isContentEditable)) ||
+				[...editors.values()].some((editor) => !!editor.getEditingShape());
 			if (e.key === "Escape") {
-				if (getState().popup) cancelPopup();
-				else if (getState().pickMode) setPickMode(false);
+				// Consume it: tldraw's own Escape would reset the tool to select and
+				// undo the tool we are about to restore.
+				if (getState().popup) {
+					cancelPopup();
+					e.preventDefault();
+					e.stopPropagation();
+					return;
+				}
+				if (getState().pickMode) {
+					setPickMode(false);
+					e.preventDefault();
+					e.stopPropagation();
+					return;
+				}
+				// otherwise let tldraw see it (end editing, clear selection)
 				return;
 			}
 			if (typing) return;
 			if (e.key === "i" || e.key === "I") setMode("interact");
 			if (e.key === "a" || e.key === "A") setMode("annotate");
-			if (e.key === "p" || e.key === "P") {
-				const on = !getState().pickMode;
-				setPickMode(on);
-				if (on && activeEditor) activeEditor.setCurrentTool("select");
-			}
+			// pick is an annotation gesture: interact mode owns the pointer
+			if ((e.key === "p" || e.key === "P") && getState().mode === "annotate") setPickMode(!getState().pickMode);
 		};
-		window.addEventListener("keydown", onKey);
-		return () => window.removeEventListener("keydown", onKey);
+		// capture: the handler has to run before tldraw's container listeners so a
+		// consumed Escape never reaches them
+		window.addEventListener("keydown", onKey, true);
+		return () => window.removeEventListener("keydown", onKey, true);
 	}, [activeEditor]);
+
+	// While the comment popup is open its target stays lit and the inspect-hover
+	// overlay is frozen (it would otherwise chase the pointer across the page
+	// you are describing); both come back when the popup closes.
+	const popupId = state.popup?.commentId ?? null;
+	useEffect(() => {
+		setPickHover(!popupId);
+	}, [popupId]);
 
 	// Reference images: keep the clipboard/drop bytes ourselves. tldraw also
 	// receives these events and puts the picture on the canvas — that copy is

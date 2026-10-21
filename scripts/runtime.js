@@ -17,6 +17,9 @@
 	var hoverBox = null;
 	var hoverChip = null;
 	var hoverEl = null;
+	// hover preview frozen while the comment popup is open — the element being
+	// commented on stays outlined instead of the outline chasing the pointer
+	var hoverPaused = false;
 
 	function ensureHoverLayer() {
 		if (hoverBox && hoverBox.isConnected) return;
@@ -40,6 +43,11 @@
 			"white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" +
 			"box-shadow:2px 2px 0 rgba(0,0,0,0.35);";
 		root.appendChild(hoverChip);
+	}
+
+	function setHoverPaused(on) {
+		hoverPaused = !!on;
+		if (hoverPaused) hideHover();
 	}
 
 	function hideHover() {
@@ -75,7 +83,7 @@
 	}
 
 	function onPickMove(e) {
-		if (!picking) return;
+		if (!picking || hoverPaused) return;
 		var el = e.target;
 		if (!(el instanceof Element)) return;
 		// the overlay/chip are pointer-events:none, so target is the real element
@@ -89,7 +97,7 @@
 	}
 
 	function onPickScroll() {
-		if (!picking) return;
+		if (!picking || hoverPaused) return;
 		if (hoverEl && hoverEl.isConnected) showHover(hoverEl);
 		else hideHover();
 	}
@@ -252,6 +260,7 @@
 
 		if (d.type === "forge:pick") {
 			setPicking(!!d.on);
+			if (typeof d.hover === "boolean") setHoverPaused(!d.hover);
 			return;
 		}
 

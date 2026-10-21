@@ -6,19 +6,67 @@ import type { ForgeComment } from "./types";
 import type { Editor } from "tldraw";
 
 export function setMode(mode: "interact" | "annotate"): void {
+	const prev = getState().mode;
+	// disarm the picker through setPickMode so the annotation tool it borrowed
+	// comes back before the mode switch records/overrides the tool
+	if (getState().pickMode) setPickMode(false);
 	setState({ mode, pickMode: false });
 	broadcastPick(false);
+	if (mode === "interact") {
+		// interact hands the keyboard and the pointer to the mock. Without this a
+		// text shape you were editing keeps eating keystrokes (I/A/P included) and
+		// a selected shape stays selected behind a hidden tool dock, so swap to
+		// the pan tool and close whatever edit/selection the canvases had open.
+		for (const editor of editors.values()) {
+			const tool = editor.getCurrentToolId();
+			if (tool && tool !== "hand") annotateTool = tool;
+			editor.complete();
+			editor.selectNone();
+			editor.setCurrentTool("hand");
+			editor.blur();
+		}
+	} else if (prev === "interact") {
+		for (const editor of editors.values()) editor.setCurrentTool(annotateTool);
+	}
 }
 
 export function setPickMode(on: boolean): void {
+	// picking is an annotation gesture: never arm it from interact mode
+	if (on && getState().mode !== "annotate") return;
+	if (on && !getState().pickMode) {
+		// remember the annotation tool: picking borrows the select tool for the
+		// duration, and the tool has to come back when the pick is disarmed
+		for (const editor of editors.values()) {
+			const tool = editor.getCurrentToolId();
+			if (tool && tool !== "select") pickTool = tool;
+			editor.setCurrentTool("select");
+		}
+	} else if (!on) {
+		for (const editor of editors.values()) editor.setCurrentTool(pickTool);
+	}
 	setState({ pickMode: on });
 	broadcastPick(on);
 }
 
-function broadcastPick(on: boolean) {
+/**
+ * Freeze/unfreeze the inspect-hover overlay inside the pages without disarming
+ * the pick. The comment popup uses this: while you are describing one element,
+ * the outline stays on it instead of chasing whatever the pointer crosses, and
+ * closes back to normal hovering after.
+ */
+export function setPickHover(on: boolean): void {
+	broadcastPick(getState().pickMode, on);
+}
+
+/** tool restored when leaving interact mode (hand is interact's own tool) */
+let annotateTool = "select";
+/** tool restored when disarming the picker */
+let pickTool = "select";
+
+function broadcastPick(on: boolean, hover = true) {
 	for (const iframe of document.querySelectorAll("iframe[data-forge-page]")) {
 		const win = (iframe as HTMLIFrameElement).contentWindow;
-		win?.postMessage({ source: "forge-host", type: "forge:pick", on }, "*");
+		win?.postMessage({ source: "forge-host", type: "forge:pick", on, hover }, "*");
 	}
 }
 
@@ -198,12 +246,10 @@ export function finalizePopup(): void {
 	const popup = getState().popup;
 	if (!popup) return;
 	const comment = getState().comments.find((c) => c.id === popup.commentId);
-	if (!comment || comment.text.trim() === "") {
-		removeComment(popup.commentId);
-	} else {
-		highlight(comment.page, comment.selector, false);
-	}
+	// close first: highlight() keeps a popup's subject lit only while one exists
 	setState({ popup: null });
+	if (comment) highlight(comment.page, comment.selector, false);
+	if (!comment || comment.text.trim() === "") removeComment(popup.commentId);
 }
 
 /**
@@ -214,16 +260,27 @@ export function cancelPopup(): void {
 	const popup = getState().popup;
 	if (!popup) return;
 	const comment = getState().comments.find((c) => c.id === popup.commentId);
-	if (!comment || comment.text.trim() === "") {
-		removeComment(popup.commentId);
-	} else {
-		highlight(comment.page, comment.selector, false);
-	}
 	setState({ popup: null });
+	if (comment) highlight(comment.page, comment.selector, false);
+	if (!comment || comment.text.trim() === "") removeComment(popup.commentId);
 }
 
 export function highlight(page: string | null, selector: string | null, on: boolean): void {
 	if (!page || !selector) return;
+	// While the comment popup is open its target is the subject: keep that
+	// outline up instead of accepting a "clear" from whatever just lost hover.
+	if (!on) {
+		const popup = getState().popup;
+		const subject = popup && getState().comments.find((c) => c.id === popup.commentId);
+		if (subject?.page && subject.selector) {
+			postHighlight(subject.page, subject.selector, true);
+			return;
+		}
+	}
+	postHighlight(page, selector, on);
+}
+
+function postHighlight(page: string, selector: string, on: boolean): void {
 	const iframe = document.querySelector(
 		`iframe[data-forge-page="${CSS.escape(page)}"]`,
 	) as HTMLIFrameElement | null;

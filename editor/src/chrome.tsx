@@ -12,7 +12,7 @@ import {
 } from "tldraw";
 import { getState, setState } from "./store";
 import type { ActivityCall } from "./types";
-import { setPickMode } from "./annotate";
+import { setMode, setPickMode } from "./annotate";
 import { useSyncState } from "./useSyncState";
 
 // ── icons & tool table (port of the design's SVG tool set) ─────────────────
@@ -108,16 +108,16 @@ export function TopBar({ onApprove }: { onApprove: () => void }) {
 	const interact = state.mode === "interact";
 	return (
 		<header id="topbar">
-			<div id="mode-toggle" role="group" aria-label="mode" onClick={() => setState({ mode: "interact" })}>
+			<div id="mode-toggle" role="group" aria-label="mode" onClick={() => setMode("interact")}>
 				{interact ? (
 					<>
 						<span className="mode-key mode-key-modeI-active">I</span><span className="mode-label mode-label-active">interact</span>
 						<span className="mode-sep">/</span>
-						<span className="mode-key" onClick={(e) => { e.stopPropagation(); setState({ mode: "annotate" }); }}>A</span><span className="mode-label" onClick={(e) => { e.stopPropagation(); setState({ mode: "annotate" }); }}>annotate</span>
+						<span className="mode-key" onClick={(e) => { e.stopPropagation(); setMode("annotate"); }}>A</span><span className="mode-label" onClick={(e) => { e.stopPropagation(); setMode("annotate"); }}>annotate</span>
 					</>
 				) : (
 					<>
-						<span className="mode-key" onClick={(e) => { e.stopPropagation(); setState({ mode: "interact" }); }}>I</span><span className="mode-label" onClick={(e) => { e.stopPropagation(); setState({ mode: "interact" }); }}>interact</span>
+						<span className="mode-key" onClick={(e) => { e.stopPropagation(); setMode("interact"); }}>I</span><span className="mode-label" onClick={(e) => { e.stopPropagation(); setMode("interact"); }}>interact</span>
 						<span className="mode-sep">/</span>
 						<span className="mode-key mode-key-active">A</span><span className="mode-label mode-label-active">annotate</span>
 					</>
@@ -165,11 +165,10 @@ export function DockStack({ editor }: { editor: Editor | null }) {
 					className={state.mode === "annotate" && state.pickMode ? "pick-btn-on" : ""}
 					aria-label="pick element (P)"
 					onClick={() => {
-						const on = !getState().pickMode;
-						// setPickMode (not setState) so the pick-on message reaches
-						// the page runtime inside every iframe
-						setPickMode(on);
-						if (on && editor) editor.setCurrentTool("select");
+						// setPickMode (not setState) so the pick-on message reaches the page
+						// runtime inside every iframe, and so the annotation tool is
+						// restored when the pick is switched off again
+						setPickMode(!getState().pickMode);
 					}}
 				>
 					<svg width="17" height="17" viewBox="0 0 16 16" aria-hidden="true">
@@ -187,9 +186,9 @@ export function DockStack({ editor }: { editor: Editor | null }) {
 						title={t.title}
 						aria-label={t.title}
 						onClick={() => {
-							if (!editor) return;
-							editor.setCurrentTool(t.tldraw);
-							if (getState().pickMode) setState({ pickMode: false });
+							// a tool click is an annotation gesture: it also disarms the picker
+							if (getState().pickMode) setPickMode(false);
+							if (editor) editor.setCurrentTool(t.tldraw);
 						}}
 					>
 						<svg width="17" height="17" viewBox="0 0 16 16" aria-hidden="true">
