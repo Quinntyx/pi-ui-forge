@@ -10,7 +10,7 @@ export function setMode(mode: "interact" | "annotate"): void {
 	// disarm the picker through setPickMode so the annotation tool it borrowed
 	// comes back before the mode switch records/overrides the tool
 	if (getState().pickMode) setPickMode(false);
-	setState({ mode, pickMode: false });
+	setState({ mode, pickMode: false, tip: null });
 	broadcastPick(false);
 	if (mode === "interact") {
 		// interact hands the keyboard and the pointer to the mock. Without this a
@@ -235,6 +235,31 @@ export function updateCommentText(commentId: string, text: string): void {
 	setState({
 		comments: getState().comments.map((c) => (c.id === commentId ? { ...c, text } : c)),
 	});
+}
+
+/**
+ * Show the comment tooltip for a pin (hover, or after committing a comment).
+ * Re-entering the same pin keeps its inline editor open; a different pin
+ * retargets the tooltip and closes any editor.
+ */
+export function openTip(commentId: string, canvasId: string, x: number, y: number): void {
+	const cur = getState().tip;
+	if (cur && cur.commentId === commentId) {
+		if (cur.x !== x || cur.y !== y || cur.canvasId !== canvasId)
+			setState({ tip: { ...cur, canvasId, x, y } });
+		return;
+	}
+	setState({ tip: { commentId, canvasId, x, y, editing: false } });
+}
+
+export function closeTip(): void {
+	if (getState().tip) setState({ tip: null });
+}
+
+/** Open or close the tooltip's inline editor (text is saved by the caller). */
+export function setTipEditing(editing: boolean): void {
+	const cur = getState().tip;
+	if (cur && cur.editing !== editing) setState({ tip: { ...cur, editing } });
 }
 
 /**

@@ -17,6 +17,7 @@ import { connect, onMessage, send } from "./ws";
 import { getState, setState, useSyncState, addPastedImage } from "./store";
 import { applyPageHashes } from "./hashes";
 import { CommentPop, DockStack, ProgressBar, PromptStack, StatusLine, StylePanel, TopBar } from "./chrome";
+import { PinTipLayer } from "./pin-tip";
 import type { World } from "./types";
 import type { Editor } from "tldraw";
 
@@ -198,7 +199,6 @@ export default function App() {
 	// interact is a real user mode (works even mid-review): it must hand the
 	// pointer to the mock iframes
 	const interact = state.mode === "interact";
-	const reviewChrome = review && !interact;
 	const working = !review && !interact;
 	const visibleMocks = state.committedCanvas
 		? state.world.mocks.filter((m) => m.id === state.committedCanvas)
@@ -221,7 +221,7 @@ export default function App() {
 					{!interact && state.phase !== "closed" && <DockStack editor={activeEditor} />}
 					{!interact && state.phase !== "closed" && <StylePanel editor={activeEditor} />}
 
-					{reviewChrome && <PromptStack onSend={doSend} busy={busy} />}
+					{review && <PromptStack onSend={doSend} busy={busy} />}
 					{working && <ProgressBar />}
 					{state.phase === "closed" && (
 						<div className="forge-empty">session closed — you can close this window</div>
@@ -231,6 +231,7 @@ export default function App() {
 
 			<StatusLine />
 
+			<PinTipLayer />
 			<CommentPop screen={popupScreen} onFinalize={finalizePopup} onCancel={cancelPopup} />
 		</div>
 	);

@@ -2,12 +2,10 @@
 // marker). Types live in schema-augment.ts (module augmentation).
 
 import { BaseBoxShapeUtil, HTMLContainer, T } from "tldraw";
-import { useState } from "react";
 import type { CommentPinShape, MockPageShape } from "./schema-augment";
 import type { TLShape } from "tldraw";
-import type { ForgeComment } from "./types";
 import { useSyncState } from "./store";
-import { updateCommentText } from "./annotate";
+import { openTip } from "./annotate";
 import { usePageHash } from "./hashes";
 
 const mockPageProps = {
@@ -80,13 +78,22 @@ export class CommentPinShapeUtil extends BaseBoxShapeUtil<CommentPinShape> {
 		// the pin's own tooltip duplicates the popup (same selector, same anchor), so
 		// only one of the two is ever drawn for a given comment
 		const popupOpen = state.popup?.commentId === shape.props.commentId;
+		// the tooltip itself is host chrome (PinTipLayer), not part of the shape:
+		// it must stay open while you type in it, which a canvas-rendered div can
+		// never do. The pin only reports hover.
+		const canTip = !!comment && !popupOpen && state.mode === "annotate";
 		return (
 			<HTMLContainer style={{ pointerEvents: "all" }}>
 				<div className="pin-wrap">
-					<div className={`pin c-${color}`} style={{ width: 17, height: 17 }}>
+					<div
+						className={`pin c-${color}`}
+						style={{ width: 17, height: 17 }}
+						onPointerEnter={() => {
+							if (canTip) openTip(shape.props.commentId, shape.props.canvasId, shape.x, shape.y);
+						}}
+					>
 						{shape.props.num}
 					</div>
-					{comment && !popupOpen && (comment.selector || comment.text) && <PinTip comment={comment} />}
 				</div>
 			</HTMLContainer>
 		);
@@ -98,60 +105,6 @@ export class CommentPinShapeUtil extends BaseBoxShapeUtil<CommentPinShape> {
 		path.rect(0, 0, shape.props.w, shape.props.h);
 		return path;
 	}
-}
-
-/**
- * Hover tooltip on a pin: selector + comment text. Clicking it opens an
- * inline editor (textarea) in place — Enter (or blur) saves, Escape reverts.
- * Edits go through updateCommentText so the store — and the send-back
- * payload — always carry the current text.
- */
-function PinTip({ comment }: { comment: ForgeComment }) {
-	const [editing, setEditing] = useState(false);
-	if (editing) {
-		return (
-			<div
-				className="pin-tip editing"
-				onMouseDown={(e) => e.stopPropagation()}
-				onClick={(e) => e.stopPropagation()}
-			>
-				{comment.selector && <code>{comment.selector}</code>}
-				<textarea
-					className="pin-edit"
-					autoFocus
-					defaultValue={comment.text}
-					onKeyDown={(e) => {
-						// keep tldraw's key handlers out of the editor
-						e.stopPropagation();
-						if (e.key === "Enter" && !e.shiftKey) {
-							e.preventDefault();
-							updateCommentText(comment.id, e.currentTarget.value);
-							setEditing(false);
-						} else if (e.key === "Escape") {
-							e.preventDefault();
-							setEditing(false);
-						}
-					}}
-					onBlur={(e) => {
-						// clicking away counts as a save; Escape is the explicit revert
-						updateCommentText(comment.id, e.currentTarget.value);
-						setEditing(false);
-					}}
-				/>
-			</div>
-		);
-	}
-	return (
-		<div
-			className="pin-tip"
-			title="click to edit"
-			onMouseDown={(e) => e.stopPropagation()}
-			onClick={() => setEditing(true)}
-		>
-			{comment.selector && <code>{comment.selector}</code>}
-			{comment.text && <span className="pin-tip-text">{comment.text}</span>}
-		</div>
-	);
 }
 
 /** Pin accent colors, mirroring the design (yellow/orange/purple/...). */

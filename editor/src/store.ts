@@ -9,6 +9,21 @@ export interface PopupState {
 	y: number;
 }
 
+/** Hover state for a pin's comment tooltip. The tooltip is host chrome (see
+ *  PinTipLayer), not part of the tldraw canvas: inside the shape's HTML
+ *  container it collapsed on pointerdown (the CSS :hover that kept it open
+ *  reset as tldraw handled the press), so a click could never reach the
+ *  inline editor. */
+export interface TipState {
+	commentId: string;
+	canvasId: string;
+	/** pin position in page space (converted to screen when rendered) */
+	x: number;
+	y: number;
+	/** inline text editor open in place of the text */
+	editing: boolean;
+}
+
 export interface AppState {
 	connected: boolean;
 	world: World;
@@ -28,6 +43,8 @@ export interface AppState {
 	comments: ForgeComment[];
 	/** popup comment editor anchored at a picked element */
 	popup: PopupState | null;
+	/** comment tooltip currently shown (hover/edit) */
+	tip: TipState | null;
 	/** live agent activity from pi-activity (label, phase, running calls) */
 	activity: AgentActivity | null;
 	/** reference images the user pasted or dropped, kept across review rounds */
@@ -76,6 +93,7 @@ let state: AppState = {
 	description: "",
 	comments: [],
 	popup: null,
+	tip: null,
 	activity: null,
 	pasted: loadPasted(),
 	workStartedAt: null,

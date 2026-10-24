@@ -101,16 +101,19 @@ html:has(.forge-root:not(.light)) {
 }.pin-wrap {
 	position: absolute; top: 0; left: 0; z-index: 10;
 }.c-yellow { background: var(--yellow); }.c-orange { background: var(--orange); }.c-purple { background: var(--purple); }.c-red { background: var(--red); }.c-green { background: var(--green); }.c-aqua { background: var(--aqua); }.c-blue { background: var(--blue); }/* hover tooltip on the numbered badge: selector + text. Wraps at 280px
-   instead of running on one line; pointer-events flip on with visibility so
-   hovering the tip itself keeps it open (needed for click-to-edit). */
+   instead of running on one line. Rendered in #pin-tip-layer (host chrome
+   above the canvas) so it can stay open while you edit it. */
+#pin-tip-layer {
+	position: fixed; inset: 0; z-index: 44; pointer-events: none;
+}
 .pin-tip {
-	position: absolute; bottom: calc(100% + 9px); left: 50%; transform: translateX(-50%);
+	position: absolute; transform: translate(-50%, calc(-100% - 9px));
 	width: max-content; max-width: 280px;
 	background: var(--bar); border: 1px solid var(--bg3); padding: 6px 9px;
 	font-size: 10.5px; line-height: 1.45; color: var(--faint);
 	white-space: normal; overflow-wrap: anywhere;
-	opacity: 0; pointer-events: none; cursor: pointer;
-	transition: opacity 0.12s; z-index: 40; text-align: left;
+	pointer-events: auto; cursor: text;
+	z-index: 40; text-align: left;
 	box-shadow: 3px 3px 0 var(--shadow);
 }.pin-tip::after {
 	content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
@@ -118,8 +121,9 @@ html:has(.forge-root:not(.light)) {
 }.pin-tip code {
 	display: block; color: var(--aqua); font-size: 10px; margin-bottom: 2px;
 	overflow-wrap: anywhere;
-}.pin-tip-text { white-space: pre-wrap; }/* visible on pin hover — and pinned open while the inline editor is up */
-.pin-wrap:hover .pin-tip, .pin-tip.editing { opacity: 1; pointer-events: auto; }/* inline comment editor inside the tooltip (click the tooltip to edit) */
+}.pin-tip-text { white-space: pre-wrap; }
+.pin-tip em { color: var(--grey); font-style: normal; }
+.pin-tip.editing { border-color: var(--green); }/* inline comment editor inside the tooltip (click the tooltip to edit) */
 .pin-edit {
 	display: block; width: 240px; max-width: 100%; resize: none; overflow: hidden;
 	background: transparent; border: none; border-bottom: 1px solid var(--bg3);
